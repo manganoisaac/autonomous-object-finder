@@ -22,4 +22,6 @@ class GPS:
     def direction(self) -> tuple[int, float]:
         yaw = self.imu.getRollPitchYaw()[2]
         direction = round(yaw / (pi / 2))
+        print(f"Yaw: {yaw}")
+        print(f"rounded to: {direction}")
         return direction, yaw

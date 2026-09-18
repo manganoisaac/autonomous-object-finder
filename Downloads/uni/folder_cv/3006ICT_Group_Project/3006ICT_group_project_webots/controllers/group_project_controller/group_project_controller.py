@@ -51,7 +51,7 @@ target = MISSION["target"]
 
 gps = GPS(gps=raw_gps, imu=imu, map=[[]])
 controller = RobotController(robot=robot, timestep=timestep, gps=gps)
-path = Path(checkpoints=[], map=GRID)
+path = Path(checkpoints=[], map=GRID[::-1])
 
 
 # ------------------------------------------------------------------
@@ -97,18 +97,53 @@ def main():
     print("Stations:", [s["id"] for s in CONFIG["stations"]])
     print("Camera:", camera.getWidth(), "x", camera.getHeight())
     print("before path")
-    commands = path.path((2, 7), 0)
-    print(f"grid: {GRID}")
-    print(f"grid shape: {GRID.shape}")
-    print("after path")
-    for command in commands:
-        match command:
-            case COMMAND.TURN_LEFT:
-                controller.turn_left(set_speed=set_speed)
-            case COMMAND.TURN_RIGHT:
-                controller.turn_right(set_speed=set_speed)
-            case COMMAND.MOVE:
-                controller.move(set_speed=set_speed)
+    robot.step(timestep)
+    retries = 0
+    while gps.coordinate() != (16, 24) and retries < 100:
+        retries += 1
+        starting_position = gps.coordinate()
+        directon_labels = path.path(starting_position)
+        print(f"grid: {GRID}")
+        print(f"grid shape: {GRID.shape}")
+        print("after path")
+        print("Path Cells:")
+        print(directon_labels)
+        for direction_label in directon_labels:
+            cell, label = direction_label
+            print(f"should be at cell {cell}")
+            if cell != gps.coordinate():
+                print(f"cells don't match:")
+                print(f"should be: {cell}")
+                print(f"actual location: {gps.coordinate()}")
+                break
+            controller.move_from_global_direction(label, set_speed)
+
+    print(f"WE ARE AT CELL {gps.coordinate()}")
+
+    # commands = [
+    #     COMMAND.MOVE,
+    #     COMMAND.TURN_LEFT,
+    #     COMMAND.MOVE,
+    #     COMMAND.TURN_RIGHT,
+    #     COMMAND.MOVE,
+    #     COMMAND.TURN_LEFT,
+    #     COMMAND.MOVE,
+    #     COMMAND.TURN_LEFT,
+    #     COMMAND.MOVE,
+    #     COMMAND.TURN_LEFT,
+    #     COMMAND.MOVE,
+    #     COMMAND.TURN_RIGHT,
+    #     COMMAND.MOVE,
+    # ]
+    #
+    # for command in commands:
+    #     match command:
+    #         case COMMAND.TURN_LEFT:
+    #             controller.turn_left(set_speed=set_speed)
+    #         case COMMAND.TURN_RIGHT:
+    #             controller.turn_right(set_speed=set_speed)
+    #         case COMMAND.MOVE:
+    #             controller.move(set_speed=set_speed)
 
     # while True:
     #     controller.move(set_speed=set_speed)
