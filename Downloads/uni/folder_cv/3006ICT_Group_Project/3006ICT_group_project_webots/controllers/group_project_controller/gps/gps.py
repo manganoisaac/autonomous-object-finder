@@ -2,6 +2,8 @@ from dataclasses import dataclass
 from math import floor, pi
 from typing import Any
 
+from project_utils import get_cell
+
 
 @dataclass(frozen=True)
 class GPS:
@@ -16,12 +18,9 @@ class GPS:
 
     def coordinate(self) -> tuple[int, int]:
         x, y, _ = self.gps.getValues()
-        x_discrete, y_discrete = floor((x + 2) * 10), floor((y + 2) * 10)
-        return x_discrete, y_discrete
+        return get_cell(x, y)
 
     def direction(self) -> tuple[int, float]:
         yaw = self.imu.getRollPitchYaw()[2]
         direction = round(yaw / (pi / 2))
-        print(f"Yaw: {yaw}")
-        print(f"rounded to: {direction}")
         return direction, yaw

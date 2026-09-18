@@ -1,6 +1,7 @@
 """Coordinate helpers for the 3006ICT group-project world."""
 
 import json
+from math import floor
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[2]
@@ -31,3 +32,13 @@ def station_by_id(station_id):
 
 def start_by_id(start_id):
     return next(s for s in CONFIG["starts"] if s["id"] == start_id)
+
+
+def get_cell(x: float, y: float) -> tuple[int, int]:
+    x_cell, y_cell = floor((x + 2) * 10), floor((y + 2) * 10)
+    print(f"MY COORDS: {(x_cell, y_cell)}")
+    print(f"lecturer coords: {world_to_grid(x,y)}")
+    # TODO: check [which one?]
+    return world_to_grid(x, y)
+
+    return x_cell, y_cell

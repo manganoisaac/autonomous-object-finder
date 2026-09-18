@@ -48,11 +48,8 @@ class RobotController:
 
         # get initial direction
         starting_direction, _ = self.gps.direction()
-        print(f"starting direction: {starting_direction}")
         robot_direction = direction_to_matrix[starting_direction]
         global_direction = label_to_matrix[global_dir_label]
-        print(f"robot matrix: {robot_direction}")
-        print(f"global matrix: {global_direction}")
 
         # inverse of robot direction matmul global direction
         # ...
@@ -60,24 +57,19 @@ class RobotController:
         GD = np.array(global_direction)
         rotation_needed = np.linalg.inv(RD) @ GD
 
-        print(f"Rotation Needed: {rotation_needed}")
-
         match rotation_needed.astype(int).tolist():
             case Turn.STRAIGHT:
                 self.move(set_speed)
                 return
             case Turn.RIGHT:
-                print(f"Turning right")
                 self.turn_right(set_speed)
                 self.move(set_speed)
                 return
             case Turn.LEFT:
-                print(f"Turning left")
                 self.turn_left(set_speed)
                 self.move(set_speed)
                 return
             case Turn.BACK:
-                print(f"Turning backwards")
                 self.turn_left(set_speed)
                 self.turn_left(set_speed)
                 self.move(set_speed)
@@ -87,11 +79,9 @@ class RobotController:
 
         # get initial coordinate
         starting_cell = self.gps.coordinate()
-        print(f"At coordinate: {self.gps.coordinate()}")
 
         # set robot speed
         set_speed(6.27, 6.27)
-        print(f"moving forward")
         for _ in range(3):
             self.robot.step(self.timestep)
 
@@ -107,13 +97,11 @@ class RobotController:
         return self.gps.coordinate()
 
     def turn_left(self, set_speed):
-        print("turning left")
         # get starting direction
         set_speed(-3, 3)
 
         # round to nearest pi / 2
         starting_direction, _ = self.gps.direction()
-        print(f"starting direction: {starting_direction}")
 
         # between (pi, 2 * pi) [-pi, -(pi / 2), 0, (pi / 2)]
         starting_yaw = (starting_direction * (pi / 2) + pi) % (2 * pi)
@@ -130,13 +118,11 @@ class RobotController:
         set_speed(0, 0)
 
     def turn_right(self, set_speed):
-        print("turning right")
         # get starting direction
         set_speed(3, -3)
 
         # round to nearest pi / 2
         starting_direction, _ = self.gps.direction()
-        print(f"starting direction: {starting_direction}")
 
         # between (pi, 2 * pi) [-pi, -(pi / 2), 0, (pi / 2)]
         starting_yaw = (starting_direction * (pi / 2) + pi) % (2 * pi)
@@ -151,3 +137,17 @@ class RobotController:
             self.robot.step(self.timestep)
 
         set_speed(0, 0)
+
+    def go_to_yaw(self, global_yaw, set_speed):
+        set_speed(-3, 3)
+
+        _, cur_yaw = self.gps.direction()
+        print(f"STARTING TURN: ({cur_yaw}) to ({global_yaw})")
+        while abs(cur_yaw - global_yaw) > 0.05:
+            print(f"getting from yaw: ({cur_yaw}) to ({global_yaw})")
+            self.robot.step(self.timestep)
+            _, cur_yaw = self.gps.direction()
+        set_speed(0, 0)
+        print("OBSERVING...")
+        for _ in range(50):
+            self.robot.step(self.timestep)

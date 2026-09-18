@@ -45,9 +45,10 @@ class Path:
     checkpoints: list[tuple[float, float, float]]
     map: list[list[int]]
 
-    def path(self, start_cell: tuple[int, int]) -> list[str]:
-        goal = (16, 24)
-        directions = {"UP": (0, 1), "DOWN": (0, -1), "RIGHT": (1, 0), "LEFT": (-1, 0)}
+    def path(self, start_cell: tuple[int, int], goal: tuple[int, int]) -> list[str]:
+        # directions = {"UP": (0, 1), "DOWN": (0, -1), "RIGHT": (1, 0), "LEFT": (-1, 0)}
+        # TODO: check (which one?)
+        directions = {"UP": (-1, 0), "DOWN": (1, 0), "RIGHT": (0, 1), "LEFT": (0, -1)}
         frontier = [(0, start_cell, "")]
         routes = {}
         visited = set()
@@ -55,7 +56,6 @@ class Path:
         while len(frontier) >= 0:
             cur_weight, cur_node, cur_direction = heapq.heappop(frontier)
             if cur_node == goal:
-                print("goal reached")
                 res_path = [(goal, "")]
                 cur = routes[goal]
                 while cur is not None:
@@ -73,7 +73,8 @@ class Path:
                     or new_cell[0] >= 38
                     or new_cell[1] < 2
                     or new_cell[1] >= 38
-                    or self.map[new_cell[1]][new_cell[0]] == 1
+                    # TODO: check x,y or y,x?
+                    or self.map[new_cell[0]][new_cell[1]] == 1
                 ):
                     continue
                 visited.add(new_cell)
