@@ -4,6 +4,7 @@ from typing import Any
 
 import numpy as np
 from controller import Robot
+
 from gps import GPS
 from movement import Movement, TMovement
 
@@ -149,5 +150,3 @@ class RobotController:
             _, cur_yaw = self.gps.direction()
         set_speed(0, 0)
         print("OBSERVING...")
-        for _ in range(50):
-            self.robot.step(self.timestep)

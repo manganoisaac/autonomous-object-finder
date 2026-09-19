@@ -12,13 +12,57 @@ from pathlib import Path
 
 import cv2
 import numpy as np
+import torch
+import torchvision
 from controller import Robot
+from torchvision import transforms
+
+from detector.model import Detector
 from gps import GPS
 from movement import Movement, TMovement
 from path import COMMAND, Path
 from project_utils import CONFIG, ROOT, grid_to_world, world_to_grid
 from robot import RobotController
 from stations import Station, Stations
+
+# ----------
+# CNN setup
+# ----------
+model = torch.load("./detector/detector_model.pth", weights_only=False)
+model.eval()
+device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+print(f"model: {model}")
+model = model.to(device)
+transform = transforms.Compose(
+    [
+        transforms.ToPILImage(),
+        transforms.Resize(256),
+        transforms.CenterCrop(244),
+        transforms.ToTensor(),
+        transforms.Normalize([0.5, 0.5, 0.5], [0.2, 0.2, 0.2]),
+    ]
+)
+CLASSES = [
+    "backpack",
+    "camera",
+    "wall_clock",
+    "coffee_mug",
+    "fire_extinguisher",
+    "headphones",
+    "running_shoe",
+    "soda_can",
+    # # correct names
+    # "soda_can",
+    # "coffee_mug",
+    # "backpack",
+    # "fire_extinguisher",
+    # "camera",
+    # "running_shoe",
+    # "headphones",
+    # "wall_clock",
+]
+detector = Detector(model, transform, CLASSES, device)
+
 
 # ------------------------------------------------------------------
 # Webots setup
@@ -48,6 +92,10 @@ for sensor in ps:
 MAX_SPEED = 10
 GRID = np.load(ROOT / "maps" / "occupancy_grid.npy")
 MISSION = json.loads((ROOT / "config" / "assessment_mission.json").read_text())
+
+# For CNN
+# ---------
+
 target = MISSION["target"]
 
 gps = GPS(gps=raw_gps, imu=imu, map=[[]])
@@ -76,7 +124,8 @@ def get_pose():
 def camera_bgr():
     h, w = camera.getHeight(), camera.getWidth()
     image = np.frombuffer(camera.getImage(), np.uint8).reshape(h, w, 4)
-    return cv2.cvtColor(image, cv2.COLOR_BGRA2BGR)
+    image = cv2.cvtColor(image, cv2.COLOR_BGRA2BGR)
+    return cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
 
 
 def proximity_values():
@@ -118,8 +167,15 @@ def main():
                     break
                 controller.move_from_global_direction(label, set_speed)
 
-        print(f"WE ARE AT CELL {gps.coordinate()}")
         controller.go_to_yaw(yaw, set_speed)
+        img = camera_bgr()
+        predicted_target = detector.detect(img)
+        print(f"predicted_target: {predicted_target}")
+        if predicted_target == target:
+            print(f"Found target: {target}")
+            break
+        else:
+            print(f"Not our target. Search continues...")
 
 
 if __name__ == "__main__":

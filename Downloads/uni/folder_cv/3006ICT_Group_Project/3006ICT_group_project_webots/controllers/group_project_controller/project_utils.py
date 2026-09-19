@@ -36,8 +36,6 @@ def start_by_id(start_id):
 
 def get_cell(x: float, y: float) -> tuple[int, int]:
     x_cell, y_cell = floor((x + 2) * 10), floor((y + 2) * 10)
-    print(f"MY COORDS: {(x_cell, y_cell)}")
-    print(f"lecturer coords: {world_to_grid(x,y)}")
     # TODO: check [which one?]
     return world_to_grid(x, y)
 
