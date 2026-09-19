@@ -1,0 +1,15 @@
+#!/bin/bash
+# Packing test: many Webots instances on one node -> per-node throughput.
+#PBS -N wbmc_pack
+#PBS -q workq
+#PBS -l select=1:ncpus=36:mem=24gb
+#PBS -l walltime=00:30:00
+#PBS -j oe
+#PBS -o /scratch/s5453352/webots_mc/pack_node.log
+cd /scratch/s5453352/webots_mc
+N=${N:-36}; SIMS=${SIMS:-60}; WORLD=${WORLD:-bench_A}
+OUT=results/pack_${PBS_JOBID%%.*}; mkdir -p $OUT
+echo "host=$(hostname) ncpus=$(nproc) N=$N"
+apptainer exec --cleanenv --no-home --writable-tmpfs --bind proj:/proj,$OUT:/results webots-mc.sif \
+  bash /scratch/s5453352/webots_mc/hpc_run.sh $N $SIMS $WORLD /results pack
+echo "results=$(ls $OUT/*.json | wc -l)/$N"

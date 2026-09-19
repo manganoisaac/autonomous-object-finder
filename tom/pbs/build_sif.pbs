@@ -1,0 +1,21 @@
+#!/bin/bash
+#PBS -N wbmc_build
+#PBS -q workq
+#PBS -l select=1:ncpus=4:mem=8gb
+#PBS -l walltime=00:40:00
+#PBS -j oe
+#PBS -o /scratch/s5453352/webots_mc/build_sif.log
+set -e
+cd /scratch/s5453352/webots_mc
+export APPTAINER_TMPDIR=$TMPDIR APPTAINER_CACHEDIR=/scratch/s5453352/webots_mc/.apptainer_cache
+echo "host=$(hostname) start=$(date)"
+gunzip -c webots-mc.tar.gz > $TMPDIR/webots-mc.tar
+time apptainer build --force webots-mc.sif docker-archive://$TMPDIR/webots-mc.tar
+ls -lh webots-mc.sif
+echo "=== smoke test: 2 instances, 20 s sim ==="
+mkdir -p results/smoke2
+time apptainer exec --cleanenv --no-home --writable-tmpfs --bind proj:/proj,results/smoke2:/results webots-mc.sif \
+  bash /scratch/s5453352/webots_mc/hpc_run.sh 2 20 bench_A /results smoke
+cat results/smoke2/*.json
+grep -chE "ERROR|Unable to find|Cannot download" results/smoke2/*.log || true
+echo "end=$(date)"
