@@ -24,11 +24,16 @@ from path import COMMAND, Path
 from project_utils import CONFIG, ROOT, grid_to_world, world_to_grid
 from robot import RobotController
 from stations import Station, Stations
+from safety.safety import is_dangerously_close
 
 # ----------
 # CNN setup
 # ----------
-model = torch.load("./detector/detector_model.pth", weights_only=False)
+model = torch.load(
+    "./detector/detector_model.pth",
+    map_location=torch.device("cpu"),
+    weights_only=False
+)
 model.eval()
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 print(f"model: {model}")
@@ -147,35 +152,60 @@ def main():
     print("target:", target)
     print("Stations:", [s["id"] for s in CONFIG["stations"]])
     print("Camera:", camera.getWidth(), "x", camera.getHeight())
-    print("before path")
-    print(f"stations: {CONFIG["stations"]}")
-    stations = Stations(
-        [(st["observe"], st["observe_yaw"], st["id"]) for st in CONFIG["stations"]]
-    )
-    robot.step(timestep)
-    while len(stations) > 0:
-        retries = 0
-        cur_station = stations.pop(gps.coordinate())
-        goal, yaw = cur_station
-        while gps.coordinate() != goal and retries < 100:
-            retries += 1
-            starting_position = gps.coordinate()
-            directon_labels = path.path(starting_position, goal)
-            for direction_label in directon_labels:
-                cell, label = direction_label
-                if cell != gps.coordinate():
-                    break
-                controller.move_from_global_direction(label, set_speed)
 
-        controller.go_to_yaw(yaw, set_speed)
-        img = camera_bgr()
-        predicted_target = detector.detect(img)
-        print(f"predicted_target: {predicted_target}")
-        if predicted_target == target:
-            print(f"Found target: {target}")
-            break
-        else:
-            print(f"Not our target. Search continues...")
+    # -------------------------
+    # TEMPORARY SENSOR CALIBRATION
+    # -------------------------
+    counter = 0
+
+    while robot.step(timestep) != -1:
+        prox = proximity_values()
+
+        if counter % 30 == 0:
+            danger = is_dangerously_close(prox)
+
+            print(
+                "Proximity:",
+                [round(v, 1) for v in prox],
+                "| Danger:",
+                danger
+            )
+
+        counter += 1
+        set_speed(0.0, 0.0)
+
+
+    # print("before path")
+    # print(f"stations: {CONFIG['stations']}")
+    # stations = Stations(
+    #     [(st["observe"], st["observe_yaw"], st["id"]) for st in CONFIG["stations"]]
+    # )
+    # robot.step(timestep)
+    # while len(stations) > 0:
+    #     retries = 0
+    #     cur_station = stations.pop(gps.coordinate())
+    #     goal, yaw = cur_station
+    #     while gps.coordinate() != goal and retries < 100:
+    #         retries += 1
+    #         starting_position = gps.coordinate()
+    #         directon_labels = path.path(starting_position, goal)
+    #         for direction_label in directon_labels:
+    #             cell, label = direction_label
+    #             if cell != gps.coordinate():
+    #                 break
+    #             controller.move_from_global_direction(label, set_speed)
+
+    #     controller.go_to_yaw(yaw, set_speed)
+    #     img = camera_bgr()
+    #     predicted_target = detector.detect(img)
+    #     print(f"predicted_target: {predicted_target}")
+    #     if predicted_target == target:
+    #         print(f"Found target: {target}")
+    #         break
+    #     else:
+    #         print(f"Not our target. Search continues...")
+
+    
 
 
 if __name__ == "__main__":
