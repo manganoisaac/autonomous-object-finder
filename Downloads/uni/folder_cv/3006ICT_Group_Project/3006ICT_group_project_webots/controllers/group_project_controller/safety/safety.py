@@ -12,6 +12,7 @@
 
 FRONT_DANGER_THRESHOLD = 80.0
 
+
 def is_dangerously_close(proximity_values):
     """
     Return True when the robot is dangerously close to an obstacle

@@ -23,6 +23,7 @@ from movement import Movement, TMovement
 from path import COMMAND, Path
 from project_utils import CONFIG, ROOT, grid_to_world, world_to_grid
 from robot import RobotController
+from safety.safety import is_dangerously_close
 from stations import Station, Stations
 
 # ----------
@@ -51,15 +52,6 @@ CLASSES = [
     "headphones",
     "running_shoe",
     "soda_can",
-    # # correct names
-    # "soda_can",
-    # "coffee_mug",
-    # "backpack",
-    # "fire_extinguisher",
-    # "camera",
-    # "running_shoe",
-    # "headphones",
-    # "wall_clock",
 ]
 detector = Detector(model, transform, CLASSES, device)
 
@@ -100,7 +92,6 @@ target = MISSION["target"]
 
 gps = GPS(gps=raw_gps, imu=imu, map=[[]])
 controller = RobotController(robot=robot, timestep=timestep, gps=gps)
-# TODO: check -1 or 1?
 path = Path(checkpoints=[], map=GRID[::1])
 
 
@@ -168,6 +159,10 @@ def main():
                 controller.move_from_global_direction(label, set_speed)
 
         controller.go_to_yaw(yaw, set_speed)
+        print(f"proximity_values: {proximity_values()}")
+        if not is_dangerously_close(proximity_values()):
+            print("stepping back...")
+            controller.step_back(set_speed)
         img = camera_bgr()
         predicted_target = detector.detect(img)
         print(f"predicted_target: {predicted_target}")
