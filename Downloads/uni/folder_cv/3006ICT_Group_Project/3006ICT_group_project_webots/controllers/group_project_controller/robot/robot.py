@@ -76,6 +76,11 @@ class RobotController:
                 self.move(set_speed)
                 return
 
+    def step_back(self, set_speed) -> None:
+        set_speed(-6.27, -6.27)
+        for _ in range(30):
+            self.robot.step(self.timestep)
+
     def move(self, set_speed) -> tuple[int, int]:
 
         # get initial coordinate
@@ -143,10 +148,7 @@ class RobotController:
         set_speed(-3, 3)
 
         _, cur_yaw = self.gps.direction()
-        print(f"STARTING TURN: ({cur_yaw}) to ({global_yaw})")
         while abs(cur_yaw - global_yaw) > 0.05:
-            print(f"getting from yaw: ({cur_yaw}) to ({global_yaw})")
             self.robot.step(self.timestep)
             _, cur_yaw = self.gps.direction()
         set_speed(0, 0)
-        print("OBSERVING...")
