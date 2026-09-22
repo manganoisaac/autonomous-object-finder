@@ -1,0 +1,4 @@
+# Tom 的評估與研究工作區（不進 repo）
+tom/
+__pycache__/
+*.pyc
