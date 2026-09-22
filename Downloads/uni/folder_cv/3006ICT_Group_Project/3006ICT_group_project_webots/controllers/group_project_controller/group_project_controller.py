@@ -12,12 +12,9 @@ from pathlib import Path
 
 import cv2
 import numpy as np
-import torch
-import torchvision
 from controller import Robot
-from torchvision import transforms
 
-from detector.model import Detector
+from detector import Detector
 from gps import GPS
 from movement import Movement, TMovement
 from path import COMMAND, Path
@@ -26,34 +23,7 @@ from robot import RobotController
 from safety.safety import is_dangerously_close
 from stations import Station, Stations
 
-# ----------
-# CNN setup
-# ----------
-model = torch.load("./detector/detector_model.pth", weights_only=False)
-model.eval()
-device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-print(f"model: {model}")
-model = model.to(device)
-transform = transforms.Compose(
-    [
-        transforms.ToPILImage(),
-        transforms.Resize(256),
-        transforms.CenterCrop(244),
-        transforms.ToTensor(),
-        transforms.Normalize([0.5, 0.5, 0.5], [0.2, 0.2, 0.2]),
-    ]
-)
-CLASSES = [
-    "backpack",
-    "camera",
-    "wall_clock",
-    "coffee_mug",
-    "fire_extinguisher",
-    "headphones",
-    "running_shoe",
-    "soda_can",
-]
-detector = Detector(model, transform, CLASSES, device)
+detector = Detector()
 
 
 # ------------------------------------------------------------------
@@ -163,10 +133,9 @@ def main():
         if not is_dangerously_close(proximity_values()):
             print("stepping back...")
             controller.step_back(set_speed)
-        img = camera_bgr()
-        predicted_target = detector.detect(img)
-        print(f"predicted_target: {predicted_target}")
-        if predicted_target == target:
+        seen = detector.detect(camera_bgr())
+        print(f"seen: {seen.label} ({seen.confidence:.2f})")
+        if seen.label == target:
             print(f"Found target: {target}")
             break
         else:
