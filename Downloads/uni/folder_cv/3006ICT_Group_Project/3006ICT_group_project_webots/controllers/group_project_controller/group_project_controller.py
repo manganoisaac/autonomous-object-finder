@@ -141,6 +141,12 @@ def main():
         else:
             print(f"Not our target. Search continues...")
 
+    # The motors keep their last command once main() returns, and step_back() leaves them
+    # reversing, so the robot would drive away from the station it just identified.
+    set_speed(0, 0)
+    while robot.step(timestep) != -1:
+        pass
+
 
 if __name__ == "__main__":
     main()
