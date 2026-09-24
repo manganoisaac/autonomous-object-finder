@@ -123,6 +123,24 @@ class RobotController:
 
         set_speed(0, 0)
 
+    def right_for_radians(self, set_speed, radians: float = 0.0873):
+        _, starting_yaw = self.gps.direction()
+        target_yaw = (((starting_yaw + pi) - radians) % (2 * pi)) - pi
+
+        while abs(self.gps.direction()[1] - target_yaw) > 0.002:
+            set_speed(0.1, -0.1)
+            self.robot.step(self.timestep)
+        set_speed(0, 0)
+
+    def left_for_radians(self, set_speed, radians: float = 0.0873):
+        _, starting_yaw = self.gps.direction()
+        target_yaw = (((starting_yaw + pi) + radians) % (2 * pi)) - pi
+
+        while abs(self.gps.direction()[1] - target_yaw) > 0.002:
+            set_speed(-0.1, 0.1)
+            self.robot.step(self.timestep)
+        set_speed(0, 0)
+
     def turn_right(self, set_speed):
         # get starting direction
         set_speed(3, -3)
@@ -145,7 +163,7 @@ class RobotController:
         set_speed(0, 0)
 
     def go_to_yaw(self, global_yaw, set_speed):
-        set_speed(-3, 3)
+        set_speed(-2, 2)
 
         _, cur_yaw = self.gps.direction()
         while abs(cur_yaw - global_yaw) > 0.05:
