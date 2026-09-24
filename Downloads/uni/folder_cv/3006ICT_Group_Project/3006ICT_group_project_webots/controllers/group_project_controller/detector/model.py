@@ -47,7 +47,6 @@ class Detection:
 class Detector:
     """Classifies one camera frame (H x W x 3, RGB uint8) as one of CLASSES."""
 
-    # <<<<<<< HEAD
     def __init__(
         self, weights: Path = WEIGHTS, device: str | None = None, threads: int = 4
     ):
