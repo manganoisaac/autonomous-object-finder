@@ -93,6 +93,42 @@ def proximity_values():
     return [sensor.getValue() for sensor in ps]
 
 
+def get_prediction(detector) -> tuple[str, float]:
+    img = camera_bgr()
+    predicted_target, confidence = detector.detect(img)
+    print(f"predicted_target: {predicted_target}")
+    # dummy confidence for now
+    return predicted_target, confidence
+
+
+def get_best_confidence_prediction(controller, detector) -> str:
+    class_label, best_confidence = get_prediction(detector)
+    controller.left_for_radians(set_speed)
+    label, confidence = get_prediction(detector)
+    if confidence > best_confidence:
+        best_confidence = confidence
+        class_label = label
+    controller.left_for_radians(set_speed)
+    label, confidence = get_prediction(detector)
+    if confidence > best_confidence:
+        best_confidence = confidence
+        class_label = label
+    controller.right_for_radians(set_speed)
+    controller.right_for_radians(set_speed)
+    controller.right_for_radians(set_speed)
+    label, confidence = get_prediction(detector)
+    if confidence > best_confidence:
+        best_confidence = confidence
+        class_label = label
+    controller.right_for_radians(set_speed)
+    label, confidence = get_prediction(detector)
+    if confidence > best_confidence:
+        best_confidence = confidence
+        class_label = label
+    print(f"best confidence: {best_confidence}")
+    return class_label
+
+
 # ------------------------------------------------------------------
 # Group implementation
 # ------------------------------------------------------------------
@@ -129,13 +165,25 @@ def main():
                 controller.move_from_global_direction(label, set_speed)
 
         controller.go_to_yaw(yaw, set_speed)
-        print(f"proximity_values: {proximity_values()}")
-        if not is_dangerously_close(proximity_values()):
-            print("stepping back...")
-            controller.step_back(set_speed)
-        seen = detector.detect(camera_bgr())
-        print(f"seen: {seen.label} ({seen.confidence:.2f})")
-        if seen.label == target:
+        # <<<<<<< HEAD
+        # print(f"proximity_values: {proximity_values()}")
+        # if not is_dangerously_close(proximity_values()):
+        #     print("stepping back...")
+        #     controller.step_back(set_speed)
+        # seen = detector.detect(camera_bgr())
+        # print(f"seen: {seen.label} ({seen.confidence:.2f})")
+        # if seen.label == target:
+        # print(f"proximity_values: {proximity_values()}")
+        # if not is_dangerously_close(proximity_values()):
+        #     print("stepping back...")
+        #     controller.step_back(set_speed)
+        # img = camera_bgr()
+        # predicted_target = detector.detect(img)
+        # print(f"predicted_target: {predicted_target}")
+        # if predicted_target == target:
+        predicted_target = get_best_confidence_prediction(controller, detector)
+        print(f"predicted_target: {predicted_target}")
+        if predicted_target == target:
             print(f"Found target: {target}")
             break
         else:

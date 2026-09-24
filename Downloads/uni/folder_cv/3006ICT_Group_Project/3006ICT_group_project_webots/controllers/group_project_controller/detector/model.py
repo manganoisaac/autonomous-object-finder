@@ -26,8 +26,16 @@ WEIGHTS = Path(__file__).with_name("dinov3_s.pt")
 CONFIDENCE_THRESHOLD = 0.20
 
 # Fixed at training time. Do not reorder.
-CLASSES = ("soda_can", "coffee_mug", "backpack", "fire_extinguisher",
-           "camera", "running_shoe", "headphones", "wall_clock")
+CLASSES = (
+    "soda_can",
+    "coffee_mug",
+    "backpack",
+    "fire_extinguisher",
+    "camera",
+    "running_shoe",
+    "headphones",
+    "wall_clock",
+)
 
 
 @dataclass(frozen=True)
@@ -39,19 +47,32 @@ class Detection:
 class Detector:
     """Classifies one camera frame (H x W x 3, RGB uint8) as one of CLASSES."""
 
-    def __init__(self, weights: Path = WEIGHTS, device: str | None = None, threads: int = 4):
+    # <<<<<<< HEAD
+    def __init__(
+        self, weights: Path = WEIGHTS, device: str | None = None, threads: int = 4
+    ):
         torch.set_num_threads(threads)
-        self.device = torch.device(device or ("cuda" if torch.cuda.is_available() else "cpu"))
-        model = timm.create_model(ARCH, pretrained=False, num_classes=len(CLASSES), img_size=224)
-        state = torch.load(weights, map_location="cpu")  # stored as fp16 to halve the file
+        self.device = torch.device(
+            device or ("cuda" if torch.cuda.is_available() else "cpu")
+        )
+        model = timm.create_model(
+            ARCH, pretrained=False, num_classes=len(CLASSES), img_size=224
+        )
+        state = torch.load(
+            weights, map_location="cpu"
+        )  # stored as fp16 to halve the file
         model.load_state_dict({k: v.float() for k, v in state.items()})
         self.model = model.eval().to(self.device)
-        self.transform = T.Compose([
-            T.ToPILImage(),
-            T.Resize((224, 224), interpolation=T.InterpolationMode.BICUBIC),
-            T.ToTensor(),
-            T.Normalize(timm.data.IMAGENET_DEFAULT_MEAN, timm.data.IMAGENET_DEFAULT_STD),
-        ])
+        self.transform = T.Compose(
+            [
+                T.ToPILImage(),
+                T.Resize((224, 224), interpolation=T.InterpolationMode.BICUBIC),
+                T.ToTensor(),
+                T.Normalize(
+                    timm.data.IMAGENET_DEFAULT_MEAN, timm.data.IMAGENET_DEFAULT_STD
+                ),
+            ]
+        )
 
     @torch.no_grad()
     def scores(self, image) -> torch.Tensor:
