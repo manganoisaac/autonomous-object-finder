@@ -7,6 +7,7 @@ from controller import Robot
 
 from gps import GPS
 from movement import Movement, TMovement
+from safety.safety import check_proximity, ProximityDirection
 
 
 @dataclass(frozen=True)
@@ -15,9 +16,14 @@ class RobotController:
     timestep: Any
     gps: GPS
 
-    def move_from_global_direction(self, global_dir_label: str, set_speed) -> None:
+    def move_from_global_direction(
+        self,
+        global_dir_label: str,
+        set_speed,
+        get_proximity,
+    ) -> set[ProximityDirection]:
         if global_dir_label == "":
-            return
+            return set()
 
         # TODO: make a direction enum (UP, DOWN, LEFT, RIGHT)
         class Direction:
@@ -52,58 +58,124 @@ class RobotController:
         robot_direction = direction_to_matrix[starting_direction]
         global_direction = label_to_matrix[global_dir_label]
 
-        # inverse of robot direction matmul global direction
-        # ...
+        # Determine rotation required to face the global direction
         RD = np.array(robot_direction)
         GD = np.array(global_direction)
         rotation_needed = np.linalg.inv(RD) @ GD
 
         match rotation_needed.astype(int).tolist():
             case Turn.STRAIGHT:
-                self.move(set_speed)
-                return
+                return self.move(set_speed, get_proximity)
             case Turn.RIGHT:
                 self.turn_right(set_speed)
-                self.move(set_speed)
-                return
+                return self.move(set_speed, get_proximity)
             case Turn.LEFT:
                 self.turn_left(set_speed)
-                self.move(set_speed)
-                return
+                return self.move(set_speed, get_proximity)
             case Turn.BACK:
                 self.turn_left(set_speed)
                 self.turn_left(set_speed)
-                self.move(set_speed)
-                return
+                return self.move(set_speed, get_proximity)
 
+        # defensive fallback
+        return set()
+
+    def recover_from_front(self, set_speed, get_proximity) -> bool:
+        """
+        Perform a short reverse movement after a FRONT danger event.
+
+        Returns True if recovery completed successfully.
+        Returns False if reversing becomes unsafe.
+        """
+
+        # Check whether reversing is safe before starting.
+        current_dangers = check_proximity(get_proximity())
+
+        if ProximityDirection.BACK in current_dangers:
+            set_speed(0, 0)
+            print("RECOVERY BLOCKED: BACK is also dangerous.")
+            return False
+
+        # Reverse more slowly than normal forward movement.
+        set_speed(-3.0, -3.0)
+
+        # Short conservative reverse recovery.
+        for _ in range(4):
+            self.robot.step(self.timestep)
+
+            dangers = check_proximity(get_proximity())
+
+            # Stop immediately if something becomes dangerous behind us.
+            if ProximityDirection.BACK in dangers:
+                set_speed(0, 0)
+                print("RECOVERY STOP: BACK danger detected.")
+                return False
+
+        set_speed(0, 0)
+        print("FRONT RECOVERY complete.")
+
+        return True
+        
     def step_back(self, set_speed) -> None:
         set_speed(-6.27, -6.27)
         for _ in range(30):
             self.robot.step(self.timestep)
 
-    def move(self, set_speed) -> tuple[int, int]:
+    def move(self, set_speed, get_proximity) -> set[ProximityDirection]:
 
         # get initial coordinate
         starting_cell = self.gps.coordinate()
 
         # set robot speed
         set_speed(6.27, 6.27)
+
+        # Keep the original short initial movement, while checking
+        # proximity after every simulation step
         for _ in range(3):
             self.robot.step(self.timestep)
 
-        # just testing (candidate replacement)
+            dangers = check_proximity(get_proximity())
+            if dangers:
+                set_speed(0, 0)
+
+                # a pure FRONT danger triggers a short reverse recovery
+                if dangers == {ProximityDirection.FRONT}:
+                    self.recover_from_front(
+                        set_speed,
+                        get_proximity,
+                    )
+                    
+                return dangers
+
+        # Candidate replacement for the initial coordinate.
         starting_cell = self.gps.coordinate()
 
-        # move until in new cell
+        # move until entering a new grid cell 
         while self.gps.coordinate() == starting_cell:
             self.robot.step(self.timestep)
 
-        # reset speed to none
+            # Read the latest proximity values on every simulation step.
+            dangers = check_proximity(get_proximity())
+
+            # Stop the current movement and report the detected
+            # danger directions. FRONT danger also triggers a short recovery.
+            if dangers:
+                set_speed(0, 0)
+
+                if dangers == {ProximityDirection.FRONT}:
+                    self.recover_from_front(
+                        set_speed, 
+                        get_proximity,
+                    )
+                return dangers
+
+        # stop after completing the movement 
         set_speed(0, 0)
-        return self.gps.coordinate()
+
+        # Empty set means the move completed without a safety event.
+        return set()
 
     def turn_left(self, set_speed):
-        # get starting direction
         set_speed(-3, 3)
 
         # round to nearest pi / 2
@@ -124,7 +196,6 @@ class RobotController:
         set_speed(0, 0)
 
     def turn_right(self, set_speed):
-        # get starting direction
         set_speed(3, -3)
 
         # round to nearest pi / 2
