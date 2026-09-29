@@ -216,6 +216,20 @@ def main():
         else:
             print(f"Not our target. Search continues...")
 
+    # Evaluation log only (not used for any decision):
+    # distance from the final pose to the observation position of the
+    # station the robot stopped at. Success criterion: <= 0.20 m.
+    x, y, _ = raw_gps.getValues()
+    stop_station = next(
+        s for s in CONFIG["stations"] if world_to_grid(*s["observe"]) == goal
+    )
+    ox, oy = stop_station["observe"]
+    print(f"MISSION TIME: {robot.getTime():.1f} s (simulation)")
+    print(
+        f"FINAL DISTANCE to {stop_station['id']} observation position: "
+        f"{math.hypot(x - ox, y - oy):.3f} m"
+    )
+
     print("PROXIMITY PEAKS (value @ cell):")
     for i in range(8):
         print(f"  ps{i}: {PS_MAX[i]:.1f} @ {PS_MAX_CELL[i]}")
