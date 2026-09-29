@@ -108,9 +108,17 @@ def camera_bgr():
         cv2.COLOR_BGR2RGB
     )
 
+PS_MAX = [0.0] * 8
+PS_MAX_CELL = [None] * 8
+
 
 def proximity_values():
-    return [sensor.getValue() for sensor in ps]
+    values = [sensor.getValue() for sensor in ps]
+    for i, v in enumerate(values):
+        if v > PS_MAX[i]:
+            PS_MAX[i] = v
+            PS_MAX_CELL[i] = gps.coordinate()
+    return values
 
 
 # def get_prediction(detector) -> tuple[str, float]:
@@ -207,6 +215,10 @@ def main():
             break
         else:
             print(f"Not our target. Search continues...")
+
+    print("PROXIMITY PEAKS (value @ cell):")
+    for i in range(8):
+        print(f"  ps{i}: {PS_MAX[i]:.1f} @ {PS_MAX_CELL[i]}")
 
     # Motors retain their last command when main() returns.
     set_speed(0, 0)
