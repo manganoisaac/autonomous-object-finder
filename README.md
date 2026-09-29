@@ -135,10 +135,10 @@ If the predicted object matches the mission target, the mission terminates succe
 
 The safety system interprets the eight e-puck proximity sensors using directional groups:
 
-- FRONT: `ps0` and `ps7`
-- RIGHT: primarily `ps2`
+- FRONT: `ps0` and `ps7` (straight ahead), plus front-diagonal `ps1` and `ps6`
+- RIGHT: `ps2`
 - BACK: `ps3` and `ps4`
-- LEFT: primarily `ps5`
+- LEFT: `ps5`
 
 The following empirically calibrated thresholds are currently used:
 
