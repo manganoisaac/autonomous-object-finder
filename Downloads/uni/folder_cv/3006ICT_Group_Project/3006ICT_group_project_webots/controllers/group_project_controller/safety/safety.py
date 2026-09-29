@@ -10,6 +10,11 @@ class ProximityDirection(Enum):
     BACK = auto()
     LEFT = auto()
 
+class MotionEvent(Enum):
+    """Movement failures that proximity sensors cannot see."""
+    STUCK = auto()
+
+    
 # initial danger threshold calibrated through webots proximity-sensor testing.
 FRONT_DANGER_THRESHOLD = 120.0
 RIGHT_DANGER_THRESHOLD = 150.0
