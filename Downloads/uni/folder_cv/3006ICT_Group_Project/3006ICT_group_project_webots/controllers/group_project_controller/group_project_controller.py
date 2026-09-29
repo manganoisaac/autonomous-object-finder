@@ -121,12 +121,6 @@ def proximity_values():
     return values
 
 
-# def get_prediction(detector) -> tuple[str, float]:
-#     img = camera_bgr()
-#     detection = detector.detect(img)
-#     return detection.label, detection.confidence
-
-
 def get_best_confidence_prediction(controller, detector) -> str:
     images = []
     controller.left_for_radians(set_speed)

@@ -7,13 +7,13 @@ from controller import Robot
 
 from gps import GPS
 from movement import Movement, TMovement
-from safety.safety import check_proximity, MotionEvent, ProximityDirection
+from safety.safety import MotionEvent, ProximityDirection, check_proximity
 
 # ---------------------------------------------------------------
 # Forward motion and stuck detection
 # ---------------------------------------------------------------
-FORWARD_SPEED = 6.27   # rad/s
-WHEEL_RADIUS = 0.02    # m; gives 4.0 mm/step at 32 ms, matching measured free motion
+FORWARD_SPEED = 6.27  # rad/s
+WHEEL_RADIUS = 0.02  # m; gives 4.0 mm/step at 32 ms, matching measured free motion
 
 # Stuck rule: the move is stuck if NONE of the last STUCK_WINDOW steps reached
 # SLOW_STEP_RATIO of the expected free-motion step (4.0 mm -> 3.0 mm).
@@ -25,9 +25,9 @@ WHEEL_RADIUS = 0.02    # m; gives 4.0 mm/step at 32 ms, matching measured free m
 #                                   in a row before a full-speed step (Start C)
 # A window of 8 gives 2x margin over normal motion and detects contact
 # ~8 steps (~0.26 s) after it happens.
-STUCK_WINDOW = 8           # steps
+STUCK_WINDOW = 8  # steps
 SLOW_STEP_RATIO = 0.75
-MAX_STEPS_PER_MOVE = 75    # ~3x the ~25 steps one 0.1 m cell normally takes
+MAX_STEPS_PER_MOVE = 75  # ~3x the ~25 steps one 0.1 m cell normally takes
 
 
 @dataclass(frozen=True)
@@ -45,7 +45,6 @@ class RobotController:
         if global_dir_label == "":
             return set()
 
-        # TODO: make a direction enum (UP, DOWN, LEFT, RIGHT)
         class Direction:
             RIGHT = [[1, 0], [0, 1]]
             UP = [[0, 1], [-1, 0]]
@@ -135,7 +134,7 @@ class RobotController:
         print("REVERSE RECOVERY complete.")
 
         return True
-        
+
     def step_back(self, set_speed) -> None:
         set_speed(-6.27, -6.27)
         for _ in range(30):
@@ -157,7 +156,7 @@ class RobotController:
         if len(history) <= STUCK_WINDOW:
             return None
 
-        recent = history[-1 - STUCK_WINDOW:]
+        recent = history[-1 - STUCK_WINDOW :]
         steps = [hypot(b[0] - a[0], b[1] - a[1]) for a, b in zip(recent, recent[1:])]
         expected_step = FORWARD_SPEED * WHEEL_RADIUS * (self.timestep / 1000)
         slow_step = SLOW_STEP_RATIO * expected_step

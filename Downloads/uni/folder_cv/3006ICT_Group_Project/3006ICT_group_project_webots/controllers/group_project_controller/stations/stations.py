@@ -18,7 +18,10 @@ class Stations:
     stations: dict[str, Station]
 
     def __init__(self, stations: list[tuple[tuple[float, float], float, str]]):
-        """list[tuple[observation, yaw, id]]"""
+        """
+        Initialises the stations into a list.
+        Returns -> list[tuple[observation, yaw, id]]
+        """
         self.stations = {}
         for observation, yaw, id in stations:
             station = Station(
@@ -27,6 +30,10 @@ class Stations:
             self.stations[id] = station
 
     def pop(self, robot_cell) -> tuple[tuple[int, int], float]:
+        """
+        Removes and returns the station with the minimum manhattan distance
+        from the robot. This becomes the next point the robot moves to.
+        """
         id, stn = min(
             self.stations.items(),
             key=lambda s: manhattan_dist(s[1]["observe"], robot_cell),
@@ -35,5 +42,7 @@ class Stations:
         return stn["observe"], stn["observe_yaw"]
 
     def __len__(self) -> int:
+        """
+        Override the len() function with the length of the stations list
+        """
         return len(self.stations)
-        return res_stn
