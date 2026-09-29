@@ -16,6 +16,12 @@ RIGHT_DANGER_THRESHOLD = 150.0
 BACK_DANGER_THRESHOLD = 120.0
 LEFT_DANGER_THRESHOLD = 150.0
 
+# Front-diagonal sensors (ps1 = front-right, ps6 = front-left, ~45 deg off heading).
+# Calibrated with a 45-degree wall approach: ps6 crossed 120 at ~5.2 cm clearance
+# (along the travel direction), 1.6 cm earlier than ps7 (3.6 cm).
+# Full-mission noise floor on every sensor was <= 80.4.
+FRONT_DIAGONAL_DANGER_THRESHOLD = 120.0
+
 
 def check_proximity(proximity_values) -> set[ProximityDirection]:
     '''
@@ -44,8 +50,11 @@ def check_proximity(proximity_values) -> set[ProximityDirection]:
 
     dangers = set()
 
-    # front sensors 
-    if max(ps0, ps7) > FRONT_DANGER_THRESHOLD:
+    # front sensors (straight ahead + front diagonals)
+    if (
+        max(ps0, ps7) > FRONT_DANGER_THRESHOLD
+        or max(ps1, ps6) > FRONT_DIAGONAL_DANGER_THRESHOLD
+    ):
         dangers.add(ProximityDirection.FRONT)
 
     # right sensors
