@@ -1,0 +1,25 @@
+\section{Route Planning}
+\label{sec:planning}
+\owner{Isaac Mangano}
+
+\subsection{Problem and design rationale}
+\TODO{The map is fully known, so global planning is exact; the unknown is which station holds the target. Why a grid planner rather than learning-based navigation.}
+
+\subsection{Map representation}
+\TODO{Occupancy grid from \texttt{maps/}: resolution (0.1\,m cells, $40{\times}40$), border margin, obstacle clearance, world$\leftrightarrow$grid conversion.}
+
+\subsection{Shortest path}
+We use Dijkstra's algorithm~\cite{dijkstra1959note}; A*~\cite{hart1968astar} gives the same path here. \TODO{Dijkstra (uniform cost, 4-connected) from the current cell to the station's observation cell; conversion of the cell path into MOVE / TURN\_LEFT / TURN\_RIGHT commands. Why not A* (same result on this grid size; mention cost).}
+
+\subsection{Station visiting order}
+\TODO{Greedy nearest unvisited station (Manhattan distance). Discuss alternatives (TSP order, information-driven order).}
+
+\subsection{Motion execution}
+\TODO{Cell-to-cell forward moves, in-place turns to heading, final alignment to the observation yaw, and the station scan ($\pm5^\circ$, $\pm10^\circ$).}
+
+\begin{figure}[t]
+  \centering
+  \figholder{Planned route on the occupancy grid for one mission (start, visited stations, goal)}{4cm}
+  \caption{Example plan. \TODO{caption}}
+  \label{fig:route}
+\end{figure}

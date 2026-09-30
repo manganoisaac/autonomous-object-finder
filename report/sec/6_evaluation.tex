@@ -1,0 +1,55 @@
+\section{System Evaluation}
+\label{sec:evaluation}
+
+% Rubric: experimental evaluation, results and discussion (8)
+\subsection{Protocol}
+\TODO{(i) The three provided student missions (\texttt{worlds/*.wbt}): success/failure and completion time. (ii) Monte Carlo benchmark: 3 starts $\times$ 8 targets $\times$ 4 station layouts (cyclic re-deal of textures) = 96 runs, headless Webots R2025a, scored by an independent supervisor (success = within 0.20\,m, no contact above floor level, $<240$\,s).}
+
+\begin{table}[t]
+  \centering\small
+  \begin{tabular}{@{}lccc@{}}
+    \toprule
+    World & Success & Time (s) & Final dist.\ (m) \\
+    \midrule
+    Start A & \TODO{} & \TODO{} & \TODO{} \\
+    Start B & \TODO{} & \TODO{} & \TODO{} \\
+    Start C & \TODO{} & \TODO{} & \TODO{} \\
+    \bottomrule
+  \end{tabular}
+  \caption{Results on the three provided student missions.}
+  \label{tab:missions}
+\end{table}
+
+\begin{table}[t]
+  \centering\small
+  \setlength{\tabcolsep}{4pt}
+  \resizebox{\linewidth}{!}{%
+  \begin{tabular}{@{}lccc@{}}
+    \toprule
+    & Baseline & + stop fix & Final \\
+    \midrule
+    Success            & 0/96  & 96/96 & 96/96 \\
+    Collision / timeout & 92 / 4 & 0 / 0 & 0 / 0 \\
+    Time med / p90 / max (s) & 102 / -- / -- & 73 / 143 / 167 & 108 / 197 / 229 \\
+    Final dist.\ med / max (m) & 1.881 / -- & 0.110 / 0.157 & 0.038 / 0.077 \\
+    \bottomrule
+  \end{tabular}}
+  \caption{Monte Carlo benchmark (96 runs per version). \TODO{name the versions; Final = commit 5828c41.}}
+  \label{tab:mc}
+\end{table}
+
+\subsection{Results}
+\TODO{Discuss \cref{tab:missions,tab:mc}: effect of the stop fix, precision gained by removing step-back, time cost of the station scan, per-start breakdown.}
+
+\begin{figure}[t]
+  \centering
+  \figholder{Mission time distribution per version (box/strip plot), 240\,s limit marked}{3.5cm}
+  \caption{Completion time across the Monte Carlo runs. \TODO{caption}}
+  \label{fig:mc}
+\end{figure}
+
+\subsection{Failure cases}
+\TODO{Meaningful failures: baseline collisions after reaching the correct station (motors kept reversing after \texttt{main()} returned); backpack/shoe confusion in the early CNN; runs close to the time limit. Each with cause and fix.}
+
+\subsection{Ablations}
+\TODO{Optional: scan vs.\ single frame; centre crop vs.\ whole frame; safety layers on/off.}

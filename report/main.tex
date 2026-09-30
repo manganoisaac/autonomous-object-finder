@@ -1,0 +1,48 @@
+% 3006ICT Group Project -- Final Report (ICCV 2025 template, camera-ready)
+\documentclass[10pt,twocolumn,letterpaper]{article}
+
+%%%%%%%%% PAPER TYPE
+\usepackage{iccv}              % To produce the CAMERA-READY version
+% \usepackage[review]{iccv}      % To produce the REVIEW version
+% \usepackage[pagenumbers]{iccv} % To force page numbers, e.g. for an arXiv version
+
+\input{preamble}
+
+\definecolor{iccvblue}{rgb}{0.21,0.49,0.74}
+\usepackage[pagebackref,breaklinks,colorlinks,allcolors=iccvblue]{hyperref}
+
+\def\paperID{*****}
+\def\confName{3006ICT}
+\def\confYear{2026}
+
+%%%%%%%%% TITLE
+\title{Autonomous Visual Object Finding with an e-puck:\\
+Perception, Route Planning and Safety}
+
+%%%%%%%%% AUTHORS
+\author{
+\TODO{Name} \quad Isaac Mangano \quad \TODO{Name (Hyunkyung)}\\
+Griffith University\\
+{\tt\small \TODO{student numbers / emails}}
+}
+
+\begin{document}
+\maketitle
+
+\input{sec/0_abstract}
+\input{sec/1_intro}
+\input{sec/2_system}
+\input{sec/3_perception}
+\input{sec/4_planning}
+\input{sec/5_safety}
+\input{sec/6_evaluation}
+\input{sec/7_discussion}
+\input{sec/8_contribution}
+
+{
+    \small
+    \bibliographystyle{ieeenat_fullname}
+    \bibliography{main}
+}
+
+\end{document}
