@@ -1,0 +1,41 @@
+\section{Perception}
+\label{sec:perception}
+\owner{\TODO{Name}}
+
+\subsection{Problem and design rationale}
+\TODO{Eight known classes, one reference image each $\rightarrow$ few-shot classification. Constraints: CPU inference, run-time budget, domain gap between clean reference and low, dark, off-axis camera view.}
+
+\subsection{Candidate approaches}
+We compare vision-language models~\cite{radford2021clip} and self-supervised ViTs~\cite{dosovitskiy2021vit,simeoni2025dinov3}. \TODO{Compared zero-shot CLIP/SigLIP2, prototype matching on frozen features (CLIP, DINOv2, DINOv3, ResNet18, MobileNetV3), and full fine-tuning. Why prototypes fail (cosine margin $\approx$0.02).}
+
+\begin{table}[t]
+  \centering\small
+  \begin{tabular}{@{}lccc@{}}
+    \toprule
+    Method & Normal & Hard & CPU ms \\
+    \midrule
+    Zero-shot CLIP            & \TODO{} & \TODO{} & \TODO{} \\
+    Prototype (DINOv3-S)      & \TODO{} & \TODO{} & \TODO{} \\
+    Fine-tune ResNet18        & \TODO{} & \TODO{} & \TODO{} \\
+    Fine-tune DINOv3 ViT-S/16 & 100.0   & 88.7    & 32 \\
+    \bottomrule
+  \end{tabular}
+  \caption{Encoder comparison on captured frames. \TODO{fill from perception report}}
+  \label{tab:encoders}
+\end{table}
+
+\subsection{Method}
+We fine-tune DINOv3 ViT-S/16~\cite{simeoni2025dinov3} from timm~\cite{wightman2019timm} with label smoothing~\cite{szegedy2016rethinking}. \TODO{DINOv3 ViT-S/16 (timm), CLS pooling, $224{\times}224$ whole-frame resize (no centre crop). View-matched augmentation: lower 40--70\% crop of the reference, brightness $0.3$--$0.8\times$, dark band below. Label smoothing; fp16 checkpoint (43\,MB).}
+
+\subsection{Open-set rejection and multi-view scan}
+\TODO{Confidence threshold 0.20 (distractor FPR@95 = 0\%). Scan at each station and keep the most confident frame; yaw error vs.\ accuracy curve.}
+
+\begin{figure}[t]
+  \centering
+  \figholder{yaw error vs.\ accuracy (single frame / whole frame / multi-view) -- see \texttt{perception/report/figs/yaw\_curves.pdf}}{3.5cm}
+  \caption{Accuracy against heading error. \TODO{caption}}
+  \label{fig:yaw}
+\end{figure}
+
+\subsection{Perception results}
+\TODO{Key findings: centre crop loses the poster at yaw error; whole-frame input recovers most of it; auto-crop adds little beyond that; scan reaches $\approx$100\% within $\pm30^\circ$.}

@@ -1,0 +1,32 @@
+\section{Safety}
+\label{sec:safety}
+\owner{\TODO{Name (Hyunkyung)}}
+
+\subsection{Problem and design rationale}
+\TODO{Any collision fails the mission. Sources of risk: small clearance in the grid, drift during forward moves, sliding along walls. Why a monitor layered on top of the planner rather than a reactive-only controller.}
+
+\subsection{Layer 1: directional proximity monitoring}
+\TODO{Sensor groups (front ps0/ps7 + diagonals ps1/ps6, sides, back); calibrated thresholds (front 120, right 150, \dots); per-step check during every move; front recovery (short reverse); marking the blocked cell and replanning.}
+
+\subsection{Layer 2: progress-based stuck detection}
+\TODO{Expected 4.0\,mm/step at full speed; stuck if none of the last 8 steps exceeds 3.0\,mm, or no new cell after 75 steps; calibration from logs (wall sliding 1.8--2.3\,mm, head-on $\approx$0\,mm, normal start $\le$4 slow steps).}
+
+\begin{table}[t]
+  \centering\small
+  \begin{tabular}{@{}lc@{}}
+    \toprule
+    Parameter & Value \\
+    \midrule
+    Front danger threshold & 120 \\
+    Right danger threshold & 150 \\
+    Stuck window           & 8 steps \\
+    Slow-step ratio        & 0.75 \\
+    Max steps per move     & 75 \\
+    \bottomrule
+  \end{tabular}
+  \caption{Safety parameters and how they were calibrated. \TODO{complete}}
+  \label{tab:safety}
+\end{table}
+
+\subsection{Safety results}
+\TODO{Proximity peak logs per sensor; triggered events in the benchmark; stuck-test scenario (\texttt{stuck\_test} controller).}
