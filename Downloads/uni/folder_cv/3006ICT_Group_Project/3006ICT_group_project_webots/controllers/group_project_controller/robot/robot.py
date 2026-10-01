@@ -253,8 +253,8 @@ class RobotController:
         _, starting_yaw = self.gps.direction()
         target_yaw = (((starting_yaw + pi) - radians) % (2 * pi)) - pi
 
-        while abs(self.gps.direction()[1] - target_yaw) > 0.002:
-            set_speed(0.1, -0.1)
+        while abs(self.gps.direction()[1] - target_yaw) > 0.05:
+            set_speed(0.5, -0.5)
             self.robot.step(self.timestep)
         set_speed(0, 0)
 
@@ -262,8 +262,8 @@ class RobotController:
         _, starting_yaw = self.gps.direction()
         target_yaw = (((starting_yaw + pi) + radians) % (2 * pi)) - pi
 
-        while abs(self.gps.direction()[1] - target_yaw) > 0.002:
-            set_speed(-0.1, 0.1)
+        while abs(self.gps.direction()[1] - target_yaw) > 0.05:
+            set_speed(-0.5, 0.5)
             self.robot.step(self.timestep)
         set_speed(0, 0)
 
@@ -288,10 +288,26 @@ class RobotController:
         set_speed(0, 0)
 
     def go_to_yaw(self, global_yaw, set_speed):
-        set_speed(-2, 2)
 
+        # New version
+        # ===========
         _, cur_yaw = self.gps.direction()
-        while abs(cur_yaw - global_yaw) > 0.05:
+        diff = ((global_yaw - cur_yaw + pi) % (2 * pi)) - pi
+        print(f"DEBUG[diff]: {diff}")
+
+        while abs(diff) > 0.05:
+
+            if diff > 0:
+                print("diff greater than 0")
+                set_speed(-2, 2)
+            else:
+                print("diff lesser than 0")
+                set_speed(2, -2)
+
             self.robot.step(self.timestep)
             _, cur_yaw = self.gps.direction()
+            diff = ((global_yaw - cur_yaw + pi) % (2 * pi)) - pi
+            print(f"DEBUG[diff]: {diff}")
+
         set_speed(0, 0)
+        return

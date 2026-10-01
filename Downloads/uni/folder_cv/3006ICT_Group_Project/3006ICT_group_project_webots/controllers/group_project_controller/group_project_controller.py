@@ -93,20 +93,12 @@ def camera_bgr():
     h = camera.getHeight()
     w = camera.getWidth()
 
-    image = np.frombuffer(
-        camera.getImage(),
-        np.uint8
-    ).reshape(h, w, 4)
+    image = np.frombuffer(camera.getImage(), np.uint8).reshape(h, w, 4)
 
-    image = cv2.cvtColor(
-        image,
-        cv2.COLOR_BGRA2BGR
-    )
+    image = cv2.cvtColor(image, cv2.COLOR_BGRA2BGR)
 
-    return cv2.cvtColor(
-        image,
-        cv2.COLOR_BGR2RGB
-    )
+    return cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
+
 
 PS_MAX = [0.0] * 8
 PS_MAX_CELL = [None] * 8
@@ -153,7 +145,7 @@ def get_best_confidence_prediction(controller, detector) -> str:
 
 
 # ---------------------------------------------------------------
-# Main 
+# Main
 # ---------------------------------------------------------------
 def main():
     print("Group-project controller started.")
@@ -174,7 +166,7 @@ def main():
         while gps.coordinate() != goal and retries < 100:
             retries += 1
             starting_position = gps.coordinate()
-            direction_labels = path.path(starting_position, goal)
+            direction_labels = path.path_a_star(starting_position, goal)
             for direction_label in direction_labels:
                 cell, label = direction_label
                 if cell != gps.coordinate():
@@ -198,8 +190,7 @@ def main():
                     # RobotController has already stopped/recovered.
                     # Exit the current path so it can be recalculated
                     # from the robot's updated position.
-                    break 
-
+                    break
 
         controller.go_to_yaw(yaw, set_speed)
         predicted_target = get_best_confidence_prediction(controller, detector)
@@ -236,4 +227,3 @@ def main():
 
 if __name__ == "__main__":
     main()
-
