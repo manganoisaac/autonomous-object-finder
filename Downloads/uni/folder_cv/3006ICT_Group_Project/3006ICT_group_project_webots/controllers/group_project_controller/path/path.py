@@ -104,8 +104,8 @@ class Path:
                 # ==============================================
                 routes[new_cell] = cur_node, dir_label
 
-                f_dist = self._m_dist(new_cell, goal)
-                new_weight = cur_weight + 1 + f_dist
+                f_dist = self._m_dist(new_cell, goal) + cur_weight
+                new_weight = cur_weight + 1
 
                 # Push node to heap with incremented weight and direction label
                 # =============================================================
