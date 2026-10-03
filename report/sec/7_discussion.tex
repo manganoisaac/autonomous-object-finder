@@ -3,8 +3,17 @@
 
 % Rubric: project complexity and robustness (6)
 \TODO{Limitations: time margin (slowest run 229\,s of 240\,s); scan speed; 4-connected paths with many turns; greedy station order; benchmark uses a fixed set of starts and deterministic physics.}
+\paragraph{Safety.}
+First, replanning after a safety event uses the same occupancy map.
+Therefore, if an event is caused by an obstacle that is not present in the map, the planner may repeatedly generate the same route until the retry limit is reached. 
+Temporary blocking of repeatedly problematic cells was not implemented because no safety events occurred during normal missions, the assessment environments match the occupancy grid, and additional detours could reduce the available time margin.
+Second, LEFT, RIGHT, and BACK dangers prompt the robot to stop and replan, but no direction-specific recovery manoeuvre is performed. 
+Third, the side and back proximity thresholds have been checked for false-positive occurrences but were not calibrated against stopping clearance. 
+The front threshold has been calibrated in a more direct way; however, it was calibrated only against the tested wall-approach geometries in simulation, limiting its applicability to other shapes or approach angles.
 
 \TODO{Improvements: faster or confidence-gated scan; turn-cost or 8-connected planning; path smoothing with a pure-pursuit/PID follower; learned local controller (SAC/TD3) compared against PID; randomised start poses and perturbations in the benchmark.}
+\paragraph{Safety.}
+Future improvements could include temporarily marking cells associated with repeated safety events as occupied before replanning, adding direction-specific recovery behaviours for side and back dangers, and calibrating the side and back thresholds using controlled shallow-angle and reverse-approach tests. 
 
 \section{Conclusion}
 \TODO{2--3 sentences.}

@@ -12,6 +12,7 @@ The task is simulated in Webots~\cite{michel2004webots} with an e-puck robot~\ci
 \begin{itemize}[nosep]
   \item \TODO{Perception: DINOv3 ViT-S/16 fine-tuned on eight reference images with view-matched augmentation; 32\,ms/frame on CPU.}
   \item \TODO{Planning: grid-based shortest-path planning and nearest-station visiting order.}
-  \item \TODO{Safety: directional proximity monitoring with replanning, plus progress-based stuck detection.}
+  \item \textbf{Safety:} A two-layer safety monitor combining per-step directional proximity monitoring with progress-based stuck detection for contacts missed by the proximity sensors, with replanning after each safety event. 
+  The front thresholds were empirically calibrated, improving stopping clearance in a 45$^\circ$ approach from 3.6\,cm to 5.2\,cm, and the stuck detector was validated through fault-injection tests. (\cref{sec:safety})
   \item \TODO{Evaluation: three student missions plus a 96-run Monte Carlo benchmark with an independent referee.}
 \end{itemize}
