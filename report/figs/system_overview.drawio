@@ -1,0 +1,82 @@
+<mxfile host="app.diagrams.net">
+  <diagram id="overview" name="System overview">
+    <mxGraphModel dx="924" dy="569" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="900" pageHeight="420" math="0" shadow="0">
+      <root>
+        <mxCell id="0" />
+        <mxCell id="1" parent="0" />
+        <mxCell id="mission" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#555555;fontSize=12;fontFamily=Helvetica;" value="&lt;font face=&quot;Helvetica&quot;&gt;&lt;b&gt;Read mission target&lt;/b&gt;&lt;br&gt;&lt;font style=&quot;font-size:11px&quot;&gt;assessment_mission.json&lt;/font&gt;&lt;/font&gt;" vertex="1">
+          <mxGeometry height="64" width="180" x="20" y="40" as="geometry" />
+        </mxCell>
+        <mxCell id="select" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dfece6;strokeColor=#3d6b55;fontSize=12;fontFamily=Helvetica;" value="&lt;b&gt;&lt;font style=&quot;font-size: 11px;&quot;&gt;Select nearest unvisited station&lt;/font&gt;&lt;/b&gt;&lt;br&gt;&lt;font style=&quot;font-size:11px&quot;&gt;Manhattan distance · stations&lt;/font&gt;" vertex="1">
+          <mxGeometry height="64" width="180" x="240" y="40" as="geometry" />
+        </mxCell>
+        <mxCell id="plan" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dfece6;strokeColor=#3d6b55;fontSize=12;fontFamily=Helvetica;" value="&lt;b&gt;Plan shortest grid path&lt;/b&gt;&lt;br&gt;&lt;font style=&quot;font-size:11px&quot;&gt;occupancy grid, 4-connected · path&lt;/font&gt;" vertex="1">
+          <mxGeometry height="64" width="180" x="460" y="40" as="geometry" />
+        </mxCell>
+        <mxCell id="drive" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dfece6;strokeColor=#3d6b55;fontSize=12;fontFamily=Helvetica;" value="&lt;b&gt;Drive to next cell&lt;/b&gt;&lt;br&gt;&lt;font style=&quot;font-size:11px&quot;&gt;turn, then move forward · robot&lt;/font&gt;" vertex="1">
+          <mxGeometry height="64" width="180" x="680" y="40" as="geometry" />
+        </mxCell>
+        <mxCell id="safety" parent="1" style="rounded=1;whiteSpace=wrap;html=1;dashed=1;fillColor=#ffffff;strokeColor=#b03a2e;strokeWidth=1.5;fontSize=12;fontFamily=Helvetica;" value="&lt;b&gt;Safety check every step&lt;/b&gt;&lt;br&gt;&lt;font style=&quot;font-size:11px&quot;&gt;proximity + stuck · safety&lt;/font&gt;" vertex="1">
+          <mxGeometry height="64" width="180" x="680" y="175" as="geometry" />
+        </mxCell>
+        <mxCell id="align" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=light-dark(#dfece6, #332915);strokeColor=light-dark(#497460, #b18855);fontSize=12;fontFamily=Helvetica;" value="&lt;b&gt;Align to station yaw&lt;/b&gt;&lt;br&gt;&lt;font style=&quot;font-size:11px&quot;&gt;go_to_yaw · robot&lt;/font&gt;" vertex="1">
+          <mxGeometry height="64" width="180" x="680" y="310" as="geometry" />
+        </mxCell>
+        <mxCell id="scan" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#efe3cc;strokeColor=#9a6a2f;fontSize=12;fontFamily=Helvetica;" value="&lt;b&gt;Scan and classify&lt;/b&gt;&lt;br&gt;&lt;font style=&quot;font-size: 10px;&quot;&gt;4 views (±5°, ±10°), DINOv3 · detector&lt;/font&gt;" vertex="1">
+          <mxGeometry height="64" width="180" x="460" y="310" as="geometry" />
+        </mxCell>
+        <mxCell id="match" parent="1" style="rhombus;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#9a6a2f;dashed=1;fontSize=12;fontFamily=Helvetica;" value="&lt;b&gt;Best label = target?&lt;/b&gt;" vertex="1">
+          <mxGeometry height="80" width="180" x="240" y="302" as="geometry" />
+        </mxCell>
+        <mxCell id="stop" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#1f1f1f;strokeColor=#1f1f1f;fontColor=#ffffff;fontSize=12;fontFamily=Helvetica;" value="&lt;b&gt;Stop: mission success&lt;/b&gt;" vertex="1">
+          <mxGeometry height="64" width="180" x="20" y="310" as="geometry" />
+        </mxCell>
+        <mxCell id="end" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#555555;fontSize=12;fontFamily=Helvetica;" value="&lt;b&gt;Mission End: target not found&lt;/b&gt;" vertex="1">
+          <mxGeometry height="64" width="180" x="20" y="175" as="geometry" />
+        </mxCell>
+        <mxCell id="e1" edge="1" parent="1" source="mission" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=block;endFill=1;strokeColor=#444444;fontSize=11;fontFamily=Helvetica;labelBackgroundColor=#ffffff;" target="select" value="">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e2" edge="1" parent="1" source="select" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=block;endFill=1;strokeColor=#444444;fontSize=11;fontFamily=Helvetica;labelBackgroundColor=#ffffff;" target="plan" value="">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e3" edge="1" parent="1" source="plan" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=block;endFill=1;strokeColor=#444444;fontSize=11;fontFamily=Helvetica;labelBackgroundColor=#ffffff;" target="drive" value="">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e4" edge="1" parent="1" source="drive" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=block;endFill=1;strokeColor=#444444;fontSize=11;fontFamily=Helvetica;labelBackgroundColor=#ffffff;exitX=0.35;exitY=1;entryX=0.35;entryY=0;" target="safety" value="each step">
+          <mxGeometry relative="1" x="0.0141" y="-3" as="geometry">
+            <mxPoint as="offset" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="e5" edge="1" parent="1" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=block;endFill=1;strokeColor=#444444;fontSize=11;fontFamily=Helvetica;labelBackgroundColor=#ffffff;exitX=0.65;exitY=0;entryX=0.65;entryY=1;" value="safe: next cell">
+          <mxGeometry relative="1" x="-0.0141" as="geometry">
+            <mxPoint as="offset" />
+            <mxPoint x="820" y="175" as="sourcePoint" />
+            <mxPoint x="820" y="104" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="e6" edge="1" parent="1" source="safety" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=block;endFill=1;strokeColor=#b03a2e;fontSize=11;fontFamily=Helvetica;labelBackgroundColor=#ffffff;fontColor=#b03a2e;exitX=0;exitY=0.5;entryX=0.5;entryY=1;" target="plan" value="danger / STUCK → replan">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e7" edge="1" parent="1" source="safety" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=block;endFill=1;strokeColor=#444444;fontSize=11;fontFamily=Helvetica;labelBackgroundColor=#ffffff;exitX=0.5;exitY=1;entryX=0.5;entryY=0;" target="align" value="path complete">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e8" edge="1" parent="1" source="align" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=block;endFill=1;strokeColor=#444444;fontSize=11;fontFamily=Helvetica;labelBackgroundColor=#ffffff;" target="scan" value="">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e9" edge="1" parent="1" source="scan" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=block;endFill=1;strokeColor=#444444;fontSize=11;fontFamily=Helvetica;labelBackgroundColor=#ffffff;" target="match" value="">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e10" edge="1" parent="1" source="match" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=block;endFill=1;strokeColor=#444444;fontSize=11;fontFamily=Helvetica;labelBackgroundColor=#ffffff;" target="stop" value="yes">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e11" edge="1" parent="1" source="match" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=block;endFill=1;strokeColor=#9a6a2f;fontSize=11;fontFamily=Helvetica;labelBackgroundColor=#ffffff;fontColor=#9a6a2f;exitX=0.5;exitY=0;entryX=0.5;entryY=1;" target="select" value="no: next station">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e12" edge="1" parent="1" source="select" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=block;endFill=1;strokeColor=#444444;fontSize=11;fontFamily=Helvetica;labelBackgroundColor=#ffffff;exitX=0.15;exitY=1;entryX=1;entryY=0.5;" target="end" value="no stations left">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+      </root>
+    </mxGraphModel>
+  </diagram>
+</mxfile>
