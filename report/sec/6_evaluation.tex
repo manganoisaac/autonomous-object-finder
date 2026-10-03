@@ -50,6 +50,13 @@
 
 \subsection{Failure cases}
 \TODO{Meaningful failures: baseline collisions after reaching the correct station (motors kept reversing after \texttt{main()} returned); backpack/shoe confusion in the early CNN; runs close to the time limit. Each with cause and fix.}
+\paragraph{Stuck-detector false positives.}
+The initial stuck detector classified the robot as STUCK if the cumulative displacement over the last 10 steps was less than 70\% of the expected displacement. 
+However, this approach generated 10 false positives during the Start A/B/C normal missions. 
+Analysis of debug logs showed that immediately after turning to a heading of $\pm\pi$, even during normal operation, the step displacement alternated between approximately 2\,mm and 4\,mm, and the cumulative criterion misinterpreted this temporary fluctuation as a stop. 
+Nevertheless, during normal operation, such slow steps occurred at most four times in a row.
+Accordingly, the decision rule was redesigned to check whether any single step among the most recent 8 steps exceeded 3.0\,mm (Rule A in \cref{sec:safety}), rather than using the cumulative criterion.
+After the modification, the number of false-positive STUCK events during normal missions decreased to 0, and STUCK detection was maintained for both head-on and 45$^\circ$ approaches during fault-injection tests with the proximity sensor input disabled.
 
 \subsection{Ablations}
 \TODO{Optional: scan vs.\ single frame; centre crop vs.\ whole frame; safety layers on/off.}

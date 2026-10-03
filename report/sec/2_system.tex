@@ -1,12 +1,12 @@
 \section{System Overview}
 \label{sec:system}
 
-\begin{figure}[t]
+\begin{figure*}[t]
   \centering
-  \figholder{Pipeline diagram: mission json $\rightarrow$ station order $\rightarrow$ plan $\rightarrow$ drive (safety loop) $\rightarrow$ scan \& classify $\rightarrow$ stop / next station}{4cm}
-  \caption{System overview. \TODO{caption}}
+  \includegraphics[width=\textwidth]{figs/system_overview.drawio.pdf}
+  \caption{System overview.}
   \label{fig:overview}
-\end{figure}
+\end{figure*}
 
 \TODO{Mission flow (\cref{fig:overview}): read target label; pick nearest unvisited station; plan and drive to its observation cell; turn to observation yaw; classify; stop if match, otherwise continue.}
 
