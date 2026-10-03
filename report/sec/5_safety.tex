@@ -1,32 +1,99 @@
 \section{Safety}
 \label{sec:safety}
-\owner{\TODO{Name (Hyunkyung)}}
+\owner{Hyunkyung Lee}
 
 \subsection{Problem and design rationale}
-\TODO{Any collision fails the mission. Sources of risk: small clearance in the grid, drift during forward moves, sliding along walls. Why a monitor layered on top of the planner rather than a reactive-only controller.}
+Even a single collision causes a mission to fail. 
+Our path planner uses an occupancy grid to generate a path that avoids obstacle cells, but it cannot account for heading errors, deviations in travel distance, and contact with or slippage along walls that occur during actual driving. 
+
+Consequently, instead of making changes to the path planner itself, we created an additional monitoring layer---a safety function that observes the robot's actual state while the planned movement takes place. 
+When danger is detected, the current movement is stopped immediately, and a safety event is returned to prompt the controller to replan the path from the current position.
+
+There are two reasons why a monitoring-based approach is preferable to a reactive obstacle avoidance method. 
+First, in a static assessment environment, since the global planner already provides a valid grid path, continuous reactive steering could disrupt the planned path and the discrete one-cell movement structure. 
+Second, the monitoring layer does not change the navigation behaviour unless there is an anomaly and, since the checks are solely computational and Webots waits for the controller at every step, it does not add to the mission time.
+
+The safety system consists of two complementary layers. 
+The first layer uses proximity sensors to detect a dangerous approach to obstacles before a collision occurs. 
+The second layer is a stuck detector that monitors actual movement and serves as a fallback mechanism to detect contact that the proximity sensors may have missed.
 
 \subsection{Layer 1: directional proximity monitoring}
-\TODO{Sensor groups (front ps0/ps7 + diagonals ps1/ps6, sides, back); calibrated thresholds (front 120, right 150, \dots); per-step check during every move; front recovery (short reverse); marking the blocked cell and replanning.}
+Proximity monitoring of four sensor groups (FRONT, RIGHT, BACK, LEFT; \cref{tab:safety_parameters}) is carried out at each simulation step (32\,ms) for each forward movement.
+If one or more sensor groups exceed their threshold values, the movement stops immediately, resulting in a safety event being activated. 
+To handle situations of simultaneous danger detection from different directions, a set is returned, representing the dangers detected. 
+Proximity monitoring is not carried out when the robot performs a rotation on the spot because the robot's circular footprint means there is no difference in the distance of its center from any obstacles as it rotates in place. 
 
-\subsection{Layer 2: progress-based stuck detection}
-\TODO{Expected 4.0\,mm/step at full speed; stuck if none of the last 8 steps exceeds 3.0\,mm, or no new cell after 75 steps; calibration from logs (wall sliding 1.8--2.3\,mm, head-on $\approx$0\,mm, normal start $\le$4 slow steps).}
+The front threshold was determined through a calibration test. 
+Using a test-only controller (\texttt{safety\_diagnostic}), the robot was driven toward a wall at the same speed as in an actual mission; the sensor readings and distance traveled for each step were recorded until contact was made, and the remaining distance (clearance) for each step was calculated in reverse from the point of contact.
+The peak values of all proximity sensors observed during normal full-mission operation (Start A/B/C) were 80.4 or lower. 
+The initial front threshold of 80 lies within this noise range, which confirms that the current threshold of 120 is needed; it provides a sufficient margin between normal movement and dangerous proximity. 
+The side threshold (150) and back threshold (120) remain at their initial values; while it was confirmed that there were no false positives during normal operation, unlike the front threshold, no separate calibration for clearance was performed. 
+
+In the initial implementation, only ps0 and ps7 were used for detection of front dangers. However, during a calibration test involving an approach to a wall at a 45$^\circ$ angle, it was observed that the front-diagonal sensor ps6 exceeded the threshold before ps7 did. 
+It was concluded that detection was delayed when using only ps0 and ps7 in approaching the wall at an angle; thus ps1 and ps6 were added as front-diagonal sensors. 
+After this addition, the clearance at a stop during a 45$^\circ$ approach increased from 3.6\,cm to 5.2\,cm, while the clearance during a head-on approach remained at the original 2.5\,cm. 
+
+If only a FRONT danger is detected, the robot verifies whether the back sensors indicate a safe condition and then performs a brief reverse recovery, and continues to monitor for BACK proximity even while reversing. 
+In the case of LEFT, RIGHT, or BACK danger, the robot does not perform a separate reactive avoidance manoeuvre. 
 
 \begin{table}[t]
-  \centering\small
-  \begin{tabular}{@{}lc@{}}
-    \toprule
-    Parameter & Value \\
-    \midrule
-    Front danger threshold & 120 \\
-    Right danger threshold & 150 \\
-    Stuck window           & 8 steps \\
-    Slow-step ratio        & 0.75 \\
-    Max steps per move     & 75 \\
-    \bottomrule
-  \end{tabular}
-  \caption{Safety parameters and how they were calibrated. \TODO{complete}}
-  \label{tab:safety}
+\centering
+\footnotesize
+\setlength{\tabcolsep}{3pt}
+\begin{tabular}{@{}>{\raggedright\arraybackslash}p{2.2cm}>{\raggedright\arraybackslash}p{1.75cm}>{\raggedright\arraybackslash}p{3.9cm}@{}}
+\toprule
+Parameter & Value & Rationale \\
+\midrule
+Front (ps0/ps7) & 120 & 2.5\,cm clearance in head-on approach; initial value of 80 lies within normal noise (max 80.4) \\
+Front-diagonal (ps1/ps6) & 120 & 5.2\,cm clearance in a 45$^\circ$ approach (3.6\,cm before adding ps1/ps6) \\
+Left/right (ps5/ps2) & 150 & Initial value; no false positives; clearance not calibrated \\
+Back (ps3/ps4) & 120 & Initial value; used only during reverse recovery \\
+Max.\ normal-driving reading & $\leq 80.4$ & All eight sensors, complete missions from Start A/B/C \\
+Expected displacement per step & 4.0\,mm & $6.27\,\mathrm{rad/s} \times 0.02\,\mathrm{m} \times 32\,\mathrm{ms}$ \\
+Slow-step threshold & 3.0\,mm (75\%) & Separates normal motion from wall sliding (1.8--2.3\,mm/step) \\
+Stuck-detection window & 8 steps & Twice the maximum of four consecutive slow steps in normal driving \\
+Max.\ steps per cell & 75 & Three times the typical $\approx$25 steps \\
+Reverse recovery & $-3$\,rad/s, 4 steps ($\approx$8\,mm) & Only after confirming that the back is safe \\
+\bottomrule
+\end{tabular}
+\caption{Safety parameters and their calibration rationale.}
+\label{tab:safety_parameters}
 \end{table}
 
+\subsection{Layer 2: progress-based stuck detection}
+Since the existing movement code is designed to keep the robot moving forward until it enters a new grid cell, if the robot becomes physically blocked without the proximity layer detecting the danger, the same forward command may continue for an extended period. 
+To prevent this issue, we implemented a second safety layer that monitors the actual distance traveled using GPS location data. 
+
+The theoretical distance traveled per step when moving forward normally is 
+\begin{equation}
+d = \omega r \Delta t
+  = 6.27 \times 0.02 \times 0.032
+  \approx 0.0040~\mathrm{m}
+  = 4.0~\mathrm{mm},
+\end{equation}
+so it takes approximately 25 simulation steps to move one 0.1\,m grid cell. 
+Based on this, we use two STUCK detection rules. 
+\begin{itemize}
+    \item Rule A: If none of the last 8 steps involved a movement exceeding 3.0\,mm, the robot is deemed STUCK. 
+    \item Rule B: If a single forward move exceeds 75 steps but the robot fails to enter a new grid cell, it is deemed STUCK.
+\end{itemize}
+
+If a STUCK event is detected, the system checks whether the back is clear---just as it does during FRONT recovery in the proximity layer---and then initiates a short reverse recovery. 
+
+The detection thresholds were established based on actual driving logs. While normal free motion is approximately 4.0\,mm/step, irregular displacements ranging from approximately 1.9 to 4.0\,mm could occur immediately after rotation.
+However, during normal operation, such slow steps were observed for a maximum of four consecutive steps. 
+In contrast, in the wall-contact calibration runs, step displacements remained at 1.8--2.3\,mm when sliding along a wall and $\approx$0\,mm when blocked head-on.
+Therefore, the 8-step window was set to provide a margin long enough to account for normal temporary speed fluctuations while detecting actual movement failure within approximately 8 steps---that is, within about 0.26\,s.
+
 \subsection{Safety results}
-\TODO{Proximity peak logs per sensor; triggered events in the benchmark; stuck-test scenario (\texttt{stuck\_test} controller).}
+\begin{itemize}
+    \item Normal Missions: In all runs (Start A/B/C), the maximum proximity reading across all eight sensors was 80.4 or lower. 
+    The Layer 1 safety mechanism was never triggered, and there were no false positives at Layer 2. 
+    Therefore, the safety layer did not add any time overhead to the normal mission.
+    \item Fault Injection (\texttt{stuck\_test}): The robot was driven into a wall while the proximity sensor values input to Layer 1 were intentionally blocked. 
+    Layer 2 detected a STUCK condition in both head-on and 45$^\circ$ approaches. 
+    Since the actual sensor values at the time of stoppage (373, 993) significantly exceeded the threshold of 120, it was confirmed that the detection occurred in an actual contact situation.
+    \item Benchmark: The final version had zero collisions in 96 Monte Carlo runs. 
+    However, the previous version (e97b0e5), which lacked safety monitoring during movement, also had zero collisions in the same benchmark. 
+    Therefore, it is reasonable to evaluate the safety layer not as the cause of passing the benchmark, but as a defence-in-depth mechanism designed to prepare for situations that cannot be predicted during the planning phase.
+\end{itemize}
