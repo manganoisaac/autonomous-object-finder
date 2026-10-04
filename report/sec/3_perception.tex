@@ -1,6 +1,5 @@
 \section{Perception}
 \label{sec:perception}
-\owner{Syuan-Hao Li}
 
 \subsection{Problem and design rationale}
 Perception has one job: decide which of the eight targets the poster at a station shows. The only labelled data is one $512{\times}512$ reference image per target. The camera view differs from the references in two ways (\cref{fig:samples}). First, the e-puck camera ($160{\times}120$) sits low, so at the observation pose it sees only the \emph{bottom half} of the poster, with the dark barrier body and the floor below it. Second, stations S1, S2, S3 and S8 are in shadow: their mean poster grey level is about 34, against 100--104 at S4--S7. The classifier must also run on a CPU and must not use world files or texture names.
