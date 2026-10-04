@@ -1,5 +1,7 @@
 # Autonomous Object Finder – Integrated System Summary
 
+> **Setup and running:** see [`controllers/group_project_controller/README.md`](Downloads/uni/folder_cv/3006ICT_Group_Project/3006ICT_group_project_webots/controllers/group_project_controller/README.md) (Python environment, Webots Python command, model weights, how to run the student missions, acknowledgements).
+
 ## Overview
 
 This project implements an autonomous e-puck robot in Webots that searches for a specified target object across eight observation stations.

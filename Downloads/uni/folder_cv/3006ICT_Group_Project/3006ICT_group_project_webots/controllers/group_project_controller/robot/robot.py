@@ -288,26 +288,18 @@ class RobotController:
         set_speed(0, 0)
 
     def go_to_yaw(self, global_yaw, set_speed):
-
-        # New version
-        # ===========
+        """Turn in place, the shorter way round, until facing global_yaw."""
         _, cur_yaw = self.gps.direction()
         diff = ((global_yaw - cur_yaw + pi) % (2 * pi)) - pi
-        print(f"DEBUG[diff]: {diff}")
 
         while abs(diff) > 0.05:
-
             if diff > 0:
-                print("diff greater than 0")
                 set_speed(-2, 2)
             else:
-                print("diff lesser than 0")
                 set_speed(2, -2)
 
             self.robot.step(self.timestep)
             _, cur_yaw = self.gps.direction()
             diff = ((global_yaw - cur_yaw + pi) % (2 * pi)) - pi
-            print(f"DEBUG[diff]: {diff}")
 
         set_speed(0, 0)
-        return
