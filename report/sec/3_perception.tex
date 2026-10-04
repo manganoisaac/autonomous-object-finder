@@ -1,41 +1,105 @@
 \section{Perception}
 \label{sec:perception}
-\owner{\TODO{Name}}
 
 \subsection{Problem and design rationale}
-\TODO{Eight known classes, one reference image each $\rightarrow$ few-shot classification. Constraints: CPU inference, run-time budget, domain gap between clean reference and low, dark, off-axis camera view.}
+Perception has one job: decide which of the eight targets the poster at a station shows. The only labelled data is one $512{\times}512$ reference image per target. The camera view differs from the references in two ways (\cref{fig:samples}). First, the e-puck camera ($160{\times}120$) sits low, so at the observation pose it sees only the \emph{bottom half} of the poster, with the dark barrier body and the floor below it. Second, stations S1, S2, S3 and S8 are in shadow: their mean poster grey level is about 34, against 100--104 at S4--S7. The classifier must also run on a CPU and must not use world files or texture names.
 
-\subsection{Candidate approaches}
-We compare vision-language models~\cite{radford2021clip} and self-supervised ViTs~\cite{dosovitskiy2021vit,simeoni2025dinov3}. \TODO{Compared zero-shot CLIP/SigLIP2, prototype matching on frozen features (CLIP, DINOv2, DINOv3, ResNet18, MobileNetV3), and full fine-tuning. Why prototypes fail (cosine margin $\approx$0.02).}
+\begin{figure*}[tbp]
+  \centering
+  \includegraphics[width=0.85\textwidth]{figs/perception_samples.pdf}
+  \caption{The eight provided reference images (top), view-matched augmentations of them (middle: the lower 40--70\% of the reference, brightness $\times$0.3--0.8, a dark band below), and the e-puck camera frame at each observation pose (bottom). The camera sees only the dark lower half of each poster, so a model trained on the clean references alone faces a large domain gap; the augmentation closes most of it.}
+  \label{fig:samples}
+\end{figure*}
 
-\begin{table}[t]
+\subsection{Evaluation data}
+To compare methods without touching the mission controller, a separate supervisor teleports the robot to each station, re-assigns the station textures and saves the camera image. Eight cyclic layouts place every target at every station. Two random-pose sets serve as test data: \emph{normal} (up to $\pm$6\,cm and $\pm15^\circ$; 512 target and 120 distractor frames) and \emph{hard} (up to $\pm$12\,cm and $\pm30^\circ$, where the poster sometimes leaves the frame). Two yaw/offset sweeps (17k target frames, full and lite rendering) measure pose tolerance. This supervisor builds the offline test set only. The submitted model is trained on the eight reference images alone and never sees a simulator frame.
+
+\subsection{Encoder comparison}
+We compared zero-shot text matching, class prototypes from frozen features, and fine-tuning, over 14 encoders. \Cref{tab:encoders} shows representative rows, \cref{fig:encoders} the per-class errors and \cref{fig:tsne} the feature geometry; the full comparison of all methods is in \cref{app:encoders} (\cref{fig:headline}). Two findings drove the design:
+\begin{itemize}[nosep,leftmargin=*]
+  \item \textbf{The first detector's weakness was mainly a data problem.} The original ResNet18~\cite{he2016resnet} was trained on full, bright references with generic augmentation, and it labelled many dark views \emph{running shoe} or \emph{headphones}, the two dark references. The same ResNet18 with view-matched augmentation (\cref{fig:samples}, middle) rises from 75.6\% to 98.8\% on the normal set. This indicates that the dominant failure source was the mismatch between training data and camera view rather than insufficient ResNet18 capacity.
+  \item \textbf{CLIP image embeddings do not separate these classes.} With the references as prototypes, CLIP~\cite{radford2021clip} ViT-B/32 reaches 60.0\%; the true-vs-nearest-wrong cosine margin is only 0.02--0.03, against 0.43--0.54 for DINOv3 (\cref{fig:tsne}). In our experiments, CLIP-family image-prototype methods performed poorly, whereas zero-shot \emph{text} matching performed substantially better (MobileCLIP~\cite{vasu2024mobileclip}: 95.7\%).
+\end{itemize}
+
+\begin{table}[tbp]
   \centering\small
-  \begin{tabular}{@{}lccc@{}}
+  \setlength{\tabcolsep}{2.5pt}
+  \begin{tabular}{@{}llcccc@{}}
     \toprule
-    Method & Normal & Hard & CPU ms \\
+    Method & Encoder & Norm. & Hard & AUROC & ms \\
     \midrule
-    Zero-shot CLIP            & \TODO{} & \TODO{} & \TODO{} \\
-    Prototype (DINOv3-S)      & \TODO{} & \TODO{} & \TODO{} \\
-    Fine-tune ResNet18        & \TODO{} & \TODO{} & \TODO{} \\
-    Fine-tune DINOv3 ViT-S/16 & 100.0   & 88.7    & 32 \\
+    First det.\ & ResNet18          & 75.6  & 56.8 & 0.769 & 42 \\
+    Zero-shot & MobileCLIP-S1     & 95.7  & 77.7 & 0.996 & 143 \\
+    Proto.+aug & MobileNetV3-L    & 97.3  & 78.3 & 0.989 & 13 \\
+    Proto.+aug & DINOv3-S (CLS) & 99.0 & 80.1 & 0.997 & 91 \\
+    FT+aug & ResNet18         & 98.8  & 81.6 & 0.990 & 42 \\
+    \textbf{FT+aug} & \textbf{DINOv3-S/16} & \textbf{100.0} & \textbf{88.7} & \textbf{1.000} & 91 \\
     \bottomrule
   \end{tabular}
-  \caption{Encoder comparison on captured frames. \TODO{fill from perception report}}
+  \caption{Encoder comparison. Accuracy (\%) is measured on captured frames from stations the method never saw (normal: up to $\pm$6\,cm/$\pm15^\circ$; hard: up to $\pm$12\,cm/$\pm30^\circ$), AUROC on target vs.\ distractor frames, and latency on one CPU thread; fine-tuned rows are the mean of 3 seeds and every row uses only the eight reference images (``aug'': view-matched augmentation; FT: fine-tuned). Fine-tuned DINOv3 is the only method that is perfect on the normal set and clearly best on the hard set, with stable results across seeds (s.d.\ 0.0 / 0.2).}
   \label{tab:encoders}
 \end{table}
 
-\subsection{Method}
-We fine-tune DINOv3 ViT-S/16~\cite{simeoni2025dinov3} from timm~\cite{wightman2019timm} with label smoothing~\cite{szegedy2016rethinking}. \TODO{DINOv3 ViT-S/16 (timm), CLS pooling, $224{\times}224$ whole-frame resize (no centre crop). View-matched augmentation: lower 40--70\% crop of the reference, brightness $0.3$--$0.8\times$, dark band below. Label smoothing; fp16 checkpoint (43\,MB).}
-
-\subsection{Open-set rejection and multi-view scan}
-\TODO{Confidence threshold 0.20 (distractor FPR@95 = 0\%). Scan at each station and keep the most confident frame; yaw error vs.\ accuracy curve.}
-
-\begin{figure}[t]
+\begin{figure*}[tbp]
   \centering
-  \figholder{yaw error vs.\ accuracy (single frame / whole frame / multi-view) -- see \texttt{perception/report/figs/yaw\_curves.pdf}}{3.5cm}
-  \caption{Accuracy against heading error. \TODO{caption}}
-  \label{fig:yaw}
+  \includegraphics[width=\textwidth]{figs/p_confusion.pdf}
+  \caption{Row-normalised confusion matrices (true vs.\ predicted, \%) on the 512 hard-set target frames for the first detector, the training-free DINOv3-S prototype and the submitted fine-tuned DINOv3-S, with overall accuracy in each title. The first detector sends most dark views to \emph{shoe} and \emph{headphones}, while the fine-tuned model is nearly diagonal; its remaining errors are views where the poster has largely left the frame.}
+  \label{fig:encoders}
+\end{figure*}
+
+\begin{figure*}[tbp]
+  \centering
+  \includegraphics[width=\textwidth]{figs/p_tsne.pdf}
+  \caption{t-SNE of frozen CLIP ViT-B/32, ResNet18 and DINOv3-S (CLS) features for the normal-set captures (blue), the view-augmented references (orange) and the eight original references (green). In DINOv3's feature space the captures and references of each class form one cluster, whereas CLIP's captures collapse into a single mixed blob, which is why CLIP image prototypes fail on this task.}
+  \label{fig:tsne}
+\end{figure*}
+
+\begin{figure*}[tbp]
+  \centering
+  \includegraphics[width=\textwidth]{figs/p_crop_row.pdf}
+  \caption{Accuracy against yaw error for five input strategies, for prototype and fine-tuned DINOv3-S in the full and lite worlds, measured on the yaw sweep (8 targets $\times$ 8 stations, $-40^\circ$ to $+40^\circ$ in $2.5^\circ$ steps; grey band: $\pm10^\circ$). Feeding the whole frame instead of a centre crop recovers most of the accuracy lost at 20--30$^\circ$, auto-cropping adds little on top, and no strategy recovers views beyond about $30^\circ$, where the poster has left the frame.}
+  \label{fig:pose}
+\end{figure*}
+
+\begin{figure}[tbp]
+  \centering
+  \includegraphics[width=\columnwidth]{figs/p_multiview_final.pdf}
+  \caption{Accuracy against heading error on arrival for three capture policies, simulated by re-scoring yaw-sweep frames around each arrival heading with whole-frame input (solid: the submitted fine-tuned DINOv3-S; dashed: the training-free prototype; the submitted model's 3-frame curve coincides with its scan curve at 100\% and is not drawn). Any multi-frame policy removes the submitted model's single-frame drop beyond $+20^\circ$, and keeping the most confident frame of a $\pm20^\circ$ scan does so even for the weaker prototype.}
+  \label{fig:multiview}
 \end{figure}
 
-\subsection{Perception results}
-\TODO{Key findings: centre crop loses the poster at yaw error; whole-frame input recovers most of it; auto-crop adds little beyond that; scan reaches $\approx$100\% within $\pm30^\circ$.}
+\subsection{Final model}
+We fine-tune DINOv3 ViT-S/16~\cite{simeoni2025dinov3} (21.6M parameters; self-supervised on LVD-1689M; timm~\cite{wightman2019timm} checkpoint \texttt{vit\_small\_patch16\_dinov3.lvd1689m}) on the eight references, with view-matched augmentation and label smoothing~\cite{szegedy2016rethinking}. We ship the fine-tuned weights in fp16 (43\,MB; predictions identical to fp32). At run time the whole $160{\times}120$ frame is resized to $224{\times}224$ \emph{without} a centre crop and classified in 32\,ms with four CPU threads (91\,ms single-threaded). DINOv3 was the most accurate encoder in every setting. Fine-tuning it was also the most stable: across three seeds the s.d.\ is 0.0 on the normal set, while fine-tuning MobileNetV3~\cite{howard2019mobilenetv3} on eight images varied from 55\% to 74\%.
+
+\subsection{Pose robustness and capture policy}
+The robot rarely arrives perfectly square to the poster, and at a yaw error the poster slides toward the edge of the frame. Two choices address this.
+
+\lead{Whole frame instead of centre crop.}The standard \texttt{CenterCrop} discards the frame edge. Feeding the whole frame raises fine-tuned accuracy at 20--30$^\circ$ yaw error from 71.3\% to 92.4\% and on the hard set from 81.1\% to 86.5\%, with no measurable latency penalty. Saliency-based auto-cropping added at most 0.6 points on top for the fine-tuned model, at the cost of a second pass, so we did not use it (\cref{fig:pose}).
+
+\lead{Multi-view scan.}With a single frame, the fine-tuned model keeps $\ge$95\% accuracy for yaw errors in $[-30^\circ, +22.5^\circ]$. Rotating through several headings and keeping the most confident frame makes accuracy nearly independent of arrival heading (\cref{fig:multiview}, \cref{tab:capture}). The controller therefore takes four frames at $\pm5^\circ$ and $\pm10^\circ$ around the observation yaw. On the benchmark, a single frame proved equally accurate (ablation in \cref{tab:ablation}: 96/96, 3.5\,s faster per mission), because the planner delivers the robot almost square to each station. We keep the scan to retain robustness to arrival errors beyond about $20^\circ$, for example after a safety recovery.
+
+\begin{table}[tbp]
+  \centering\small
+  \setlength{\tabcolsep}{4pt}
+  \begin{tabular}{@{}lccc@{}}
+    \toprule
+    Encoder & 1 frame & 3, mean & Scan, best \\
+    \midrule
+    First (ResNet18)            & 60.0 & 60.6  & 76.2 \\
+    Prototype DINOv3-S          & 87.4 & 96.9  & 100.0 \\
+    Fine-tuned DINOv3-S         & 97.6 & 100.0 & 100.0 \\
+    \bottomrule
+  \end{tabular}
+  \caption{Capture policies, simulated on the yaw sweep: mean accuracy (\%) over arrival heading errors in $[-30^\circ, 30^\circ]$ for one frame, three frames at $-10^\circ/0^\circ/+10^\circ$ with averaged scores, and a $\pm20^\circ$ scan that keeps the most confident frame. Keeping the most confident frame removes almost all heading sensitivity, but only for a calibrated model: the first detector gains far less.}
+  \label{tab:capture}
+\end{table}
+
+\subsection{Distractors and latency}
+Barriers B1--B5 carry 20 non-target images. With threshold 0.20 on the softmax confidence, the shipped checkpoint accepts 95\% of target frames and none of the distractor frames on the normal set: the 5th percentile of target confidence is 0.215, the 95th percentile of distractor confidence 0.148, AUROC 0.999. The probabilities are deliberately flat because of label smoothing. Confidence also flags the model's own mistakes. On the hard set, all 69 wrong predictions have confidence below 0.157, while 372 of the 443 correct ones exceed 0.20 (\cref{fig:qual}b). This is why keeping the most confident frame of a scan works. The mission controller classifies only at observation poses, which always face a station poster, so it makes a closed-set decision and keeps the threshold as a validated safeguard. The four-frame classification at one station costs about 0.13\,s of CPU time. The controller runs in Webots' synchronous mode, so inference does not consume simulation time (\cref{sec:system}).
+
+\begin{figure*}[tbp]
+  \centering
+  \includegraphics[width=\textwidth]{figs/p_qual.pdf}
+  \caption{Predictions of the submitted DINOv3 detector and the first ResNet18 detector (RN18) on captured camera frames (true label, station and heading error above each frame; predicted label and softmax confidence below; ``shoe'' is \emph{running shoe}). (a) At near-square poses the first detector maps dark posters to \emph{running shoe} or \emph{headphones}, while DINOv3 is correct. (b) At about $30^\circ$ heading error DINOv3 can still succeed, and it fails only when the poster has largely left the frame, always with low confidence ($\le$0.16), which the scan and the 0.20 threshold exploit.}
+  \label{fig:qual}
+\end{figure*}

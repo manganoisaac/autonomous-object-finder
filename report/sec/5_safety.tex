@@ -1,6 +1,5 @@
 \section{Safety}
 \label{sec:safety}
-\owner{Hyunkyung Lee}
 
 \subsection{Problem and design rationale}
 Even a single collision causes a mission to fail. 
@@ -11,7 +10,7 @@ When danger is detected, the current movement is stopped immediately, and a safe
 
 There are two reasons why a monitoring-based approach is preferable to a reactive obstacle avoidance method. 
 First, in a static assessment environment, since the global planner already provides a valid grid path, continuous reactive steering could disrupt the planned path and the discrete one-cell movement structure. 
-Second, the monitoring layer does not change the navigation behaviour unless there is an anomaly and, since the checks are solely computational and Webots waits for the controller at every step, it does not add to the mission time.
+Second, the monitoring layer does not change the navigation behaviour unless there is an anomaly and, since Webots waits for the controller at every step, the checks do not advance Webots simulation time, which is the mission-time metric (they add only wall-clock time).
 
 The safety system consists of two complementary layers. 
 The first layer uses proximity sensors to detect a dangerous approach to obstacles before a collision occurs. 
@@ -36,7 +35,7 @@ After this addition, the clearance at a stop during a 45$^\circ$ approach increa
 If only a FRONT danger is detected, the robot verifies whether the back sensors indicate a safe condition and then performs a brief reverse recovery, and continues to monitor for BACK proximity even while reversing. 
 In the case of LEFT, RIGHT, or BACK danger, the robot does not perform a separate reactive avoidance manoeuvre. 
 
-\begin{table}[t]
+\begin{table}[tbp]
 \centering
 \footnotesize
 \setlength{\tabcolsep}{3pt}
@@ -74,8 +73,8 @@ d = \omega r \Delta t
 so it takes approximately 25 simulation steps to move one 0.1\,m grid cell. 
 Based on this, we use two STUCK detection rules. 
 \begin{itemize}
-    \item Rule A: If none of the last 8 steps involved a movement exceeding 3.0\,mm, the robot is deemed STUCK. 
-    \item Rule B: If a single forward move exceeds 75 steps but the robot fails to enter a new grid cell, it is deemed STUCK.
+    \item \textbf{Rule A:} If none of the last 8 steps involved a movement exceeding 3.0\,mm, the robot is deemed STUCK. 
+    \item \textbf{Rule B:} If a single forward move exceeds 75 steps but the robot fails to enter a new grid cell, it is deemed STUCK.
 \end{itemize}
 
 If a STUCK event is detected, the system checks whether the back is clear---just as it does during FRONT recovery in the proximity layer---and then initiates a short reverse recovery. 
@@ -88,13 +87,13 @@ Therefore, the 8-step window was set to provide a margin long enough to account 
 % NOTE (Hyunkyung): re-check 80.4 / no Layer 2 false positives / 0 collisions after the final MC run
 \subsection{Safety results}
 \begin{itemize}
-    \item Normal Missions: In all runs (Start A/B/C), the maximum proximity reading across all eight sensors was 80.4 or lower. 
+    \item \textbf{Normal missions:} In all runs (Start A/B/C), the maximum proximity reading across all eight sensors was 80.4 or lower. 
     The Layer 1 safety mechanism was never triggered, and there were no false positives at Layer 2. 
-    Therefore, the safety layer did not add any time overhead to the normal mission.
-    \item Fault Injection (\texttt{stuck\_test}): The robot was driven into a wall while the proximity sensor values input to Layer 1 were intentionally blocked. 
+    Therefore, the safety layer added no measurable simulation-time overhead in the normal missions.
+    \item \textbf{Fault injection (\texttt{stuck\_test}):} The robot was driven into a wall while the Layer 1 proximity-sensor inputs were intentionally disabled. 
     Layer 2 detected a STUCK condition in both head-on and 45$^\circ$ approaches. 
     Since the actual sensor values at the time of stoppage (373, 993) significantly exceeded the threshold of 120, it was confirmed that the detection occurred in an actual contact situation.
-    \item Benchmark: The final version had zero collisions in 96 Monte Carlo runs. 
+    \item \textbf{Benchmark:} The final version had zero collisions in the 96-mission comparison benchmark. 
     However, the previous version (e97b0e5), which lacked safety monitoring during movement, also had zero collisions in the same benchmark. 
-    Therefore, it is reasonable to evaluate the safety layer not as the cause of passing the benchmark, but as a defence-in-depth mechanism designed to prepare for situations that cannot be predicted during the planning phase.
+    Therefore, it is reasonable to evaluate the safety layer not as the cause of passing the benchmark, but as a defence-in-depth mechanism designed to prepare for situations that cannot be predicted during the planning phase. Logged event counts confirm this: 0 proximity events and 0 stuck detections in 192 nominal missions, while with an unmapped box on the route the layer stopped the robot in every run and raised success from 0\% to 59\% (\cref{sec:obstacle}).
 \end{itemize}
