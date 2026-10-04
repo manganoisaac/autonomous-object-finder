@@ -21,7 +21,7 @@ The front threshold has been calibrated in a more direct way; however, it was ca
 \subsection{Future work}
 \lead{Fewer turns.} A turn-penalised A* finds equally short paths with 47\% fewer turns (\cref{app:planners}). Since a $90^\circ$ turn costs about as much time as driving one cell, this is the lowest-complexity way to reduce mission time. A pure-pursuit or PID follower on a smoothed path would go further.
 
-\lead{Confidence-gated scan.} A single frame is as accurate as the four-frame scan on the benchmark and 3.5\,s faster (\cref{tab:ablation}). Scanning only when the first frame's confidence is below the 0.20 threshold would retain robustness to large arrival errors at almost no time cost.
+\lead{Confidence-gated scan.} A single frame is as accurate as the four-frame scan on the benchmark and 3.5\,s faster (\cref{tab:ablation}). Scanning only when the first frame's confidence is below the 0.20 threshold would retain robustness to large arrival errors while avoiding most of the scan-time overhead.
 
 \lead{Handling unmapped obstacles.} Two small changes target both obstacle failure modes. Marking the cell in front of the robot as occupied after a FRONT event would make the planner route around the box instead of retrying the same path. Applying the validated 0.20 confidence threshold at the station would turn a low-confidence view from a wrong pose into ``not the target''. All 69 wrong predictions on the hard set fall below it (\cref{sec:perception}).
 
