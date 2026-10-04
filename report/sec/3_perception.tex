@@ -45,7 +45,7 @@ We compared zero-shot text matching, class prototypes from frozen features, and 
   \centering
   \begin{subfigure}[b]{0.52\textwidth}\includegraphics[width=\linewidth]{figs/p_confusion.pdf}\caption{Confusion matrices on the hard set}\end{subfigure}\hfill
   \begin{subfigure}[b]{0.46\textwidth}\includegraphics[width=\linewidth]{figs/p_tsne.pdf}\caption{t-SNE of encoder features}\end{subfigure}
-  \caption{Error structure and feature geometry, computed on the hard set: (a) row-normalised confusion matrices (true vs.\ predicted, \%); (b) t-SNE of simulator captures (blue), augmented references (orange) and original references (green). The first detector (``MVP'') sends most dark views to \emph{shoe} and \emph{headphones}, while fine-tuned DINOv3 is nearly diagonal; in DINOv3's feature space captures and references of a class form one cluster, whereas CLIP's captures collapse into one mixed blob.}
+  \caption{Error structure and feature geometry, computed on the hard set: (a) row-normalised confusion matrices (true vs.\ predicted, \%; overall accuracy in each title); (b) t-SNE of simulator captures (blue), augmented references (orange) and original references (green). The first detector sends most dark views to \emph{shoe} and \emph{headphones}, while fine-tuned DINOv3 is nearly diagonal; in DINOv3's feature space captures and references of a class form one cluster, whereas CLIP's captures collapse into one mixed blob.}
   \label{fig:encoders}
 \end{figure*}
 
