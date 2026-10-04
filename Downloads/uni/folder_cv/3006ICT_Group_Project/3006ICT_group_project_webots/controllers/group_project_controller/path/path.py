@@ -34,10 +34,11 @@ class Path:
     def _m_dist(self, node: tuple[int, int], goal: tuple[int, int]) -> int:
         return abs(node[0] - goal[0]) + abs(node[1] - goal[1])
 
-    # Djikstra to get shortest path to goal
+    # A* (Manhattan heuristic) to get shortest path to goal
     def path_a_star(
         self, start_cell: tuple[int, int], goal: tuple[int, int]
-    ) -> list[str]:
+    ) -> list[tuple[tuple[int, int], str]]:
+        """Shortest 4-connected path as [(cell, move out of it)], or [] if the goal is unreachable."""
         # Directions to iterate through
         # =============================
         directions = {"UP": (-1, 0), "DOWN": (1, 0), "RIGHT": (0, 1), "LEFT": (0, -1)}
@@ -58,7 +59,7 @@ class Path:
 
         # Search until frontier is empty or goal found
         # ============================================
-        while len(frontier) >= 0:
+        while frontier:
 
             # Process the node with lowest path cost in frontier
             # ==================================================
@@ -110,6 +111,9 @@ class Path:
                 # Push node to heap with incremented weight and direction label
                 # =============================================================
                 heapq.heappush(frontier, (f_dist, new_weight, new_cell, dir_label))
+
+        # Frontier exhausted: the goal cannot be reached from start_cell
+        return []
 
     # Djikstra to get shortest path to goal
     def path(self, start_cell: tuple[int, int], goal: tuple[int, int]) -> list[str]:

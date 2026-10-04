@@ -3,55 +3,66 @@
 
 % Rubric: experimental evaluation, results and discussion (8)
 \subsection{Protocol}
-\TODO{(i) The three provided student missions (\texttt{worlds/*.wbt}): success/failure and completion time. (ii) Monte Carlo benchmark: 3 starts $\times$ 8 targets $\times$ 4 station layouts (cyclic re-deal of textures) = 96 runs, headless Webots R2025a, scored by an independent supervisor (success = within 0.20\,m, no contact above floor level, $<240$\,s).}
+We evaluate the full system in two ways. \emph{(i) Student missions:} the three provided worlds \texttt{training\_start\_\{A,B,C\}} as supplied, with the supplied mission target (\texttt{soda\_can}, displayed at station S1). \emph{(ii) Systematic benchmark:} we use a 96-mission comparison benchmark (3 starts $\times$ 8 targets $\times$ 4 station layouts) for controller-version comparisons and ablations. For the final controller we expand it to eight layouts (192 missions, \cref{sec:obstacle}), so that every target appears at every station. A layout is a cyclic re-assignment of the eight target images to the eight stations, applied by a supervisor before the robot moves, so each target is searched for at several stations and from every start. All runs use headless Webots R2025a on a CPU cluster. An independent referee supervisor, which never communicates with the controller, scores each run against the assignment criteria: success requires stopping within 0.20\,m of the correct observation position, with no contact other than the wheels on the floor, within 240\,s of simulation time. The referee also records completion time, final distance and the station the robot stopped at. The controller uses no ground truth.
 
-\begin{table}[t]
+\begin{table}[tbp]
   \centering\small
   \begin{tabular}{@{}lccc@{}}
     \toprule
-    World & Success & Time (s) & Final dist.\ (m) \\
+    World & Result & Time (s) & Final dist.\ (m) \\
     \midrule
-    Start A & \TODO{} & \TODO{} & \TODO{} \\
-    Start B & \TODO{} & \TODO{} & \TODO{} \\
-    Start C & \TODO{} & \TODO{} & \TODO{} \\
+    Start A & success & 130.2 & 0.033 \\
+    Start B & success & 140.6 & 0.039 \\
+    Start C & success & 161.5 & 0.038 \\
     \bottomrule
   \end{tabular}
-  \caption{Results on the three provided student missions.}
+  \caption{The three provided student missions run unchanged with the final controller (target \texttt{soda\_can} at S1; time in Webots simulation seconds; distance from the final pose to the observation position, scored by the referee). All three succeed with at least 78\,s of margin and stop within 4\,cm of the goal.}
   \label{tab:missions}
 \end{table}
 
-\begin{table}[t]
+\begin{figure*}[tbp]
+  \centering
+  \includegraphics[width=\textwidth]{figs/trajectories.pdf}
+  \caption{Planned versus executed trajectories for the three student missions: the referee-logged trajectory (blue) against the A* route obtained by replaying the controller's station order and planner offline (grey, dashed), with each mission's completion time and final distance to the S1 observation position below the panel. The executed path follows the plan from all three starts (median deviation 2--3\,cm, at most 16\,cm on Start~C's final straight), and all missions end at S1 within 130--162\,s with final errors below 4\,cm.}
+  \label{fig:traj}
+\end{figure*}
+
+\begin{table}[tbp]
   \centering\small
-  \setlength{\tabcolsep}{4pt}
-  \resizebox{\linewidth}{!}{%
-  \begin{tabular}{@{}lccc@{}}
+  \setlength{\tabcolsep}{2.5pt}
+  \begin{tabular}{@{}lcccc@{}}
     \toprule
-    & Baseline & + stop fix & Final \\
+    Version & Success & Coll./TO & Time (s) & Dist.\ (m) \\
+            &         &          & med/p90/max & med/max \\
     \midrule
-    Success            & 0/96  & 96/96 & 96/96 \\
-    Collision / timeout & 92 / 4 & 0 / 0 & 0 / 0 \\
-    Time med / p90 / max (s) & 102 / -- / -- & 73 / 143 / 167 & 108 / 197 / 229 \\
-    Final dist.\ med / max (m) & 1.881 / -- & 0.110 / 0.157 & 0.038 / 0.077 \\
+    V0        & 0/96  & 92/4 & 102/179/240 & 1.881/4.424 \\
+    V1        & 96/96 & 0/0  & 73/143/167  & 0.110/0.157 \\
+    V2        & 96/96 & 0/0  & 108/197/229 & 0.038/0.077 \\
+    V3 (final)& \textbf{96/96} & \textbf{0/0} & \textbf{73/141/162} & \textbf{0.037/0.076} \\
     \bottomrule
-  \end{tabular}}
-  \caption{Monte Carlo benchmark (96 runs per version). \TODO{name the versions; Final = commit 5828c41.}}
+  \end{tabular}
+  \caption{Comparison benchmark of four controller versions on the same 96 missions (3 starts $\times$ 8 targets $\times$ 4 station layouts, scored by the referee). V0: first integration; V1: motors stopped after the mission; V2: no step-back, four-frame scan, safety layers; V3: A* and a $5\times$ faster scan (submitted; also 192/192 over all 8 layouts, \cref{tab:obstacle}). Coll./TO: collisions/timeouts. Every version found the correct station; the gains came from stopping correctly (V1), stopping precisely (V2) and restoring the time margin (V3).}
   \label{tab:mc}
 \end{table}
 
 \subsection{Results}
-\TODO{Discuss \cref{tab:missions,tab:mc}: effect of the stop fix, precision gained by removing step-back, time cost of the station scan, per-start breakdown.}
+The final controller completes all three student missions (\cref{tab:missions}) and all 96 benchmark missions (\cref{tab:mc}) with no collision. The slowest mission takes 162\,s, leaving a 78\,s margin to the time limit; per start, the median and maximum times are 80/157\,s (A), 70/141\,s (B) and 73/162\,s (C). The student missions are slower than the benchmark median because S1 comes late in every start's tour (\cref{fig:route}). \Cref{fig:traj} checks that the robot executes what the planner intends: the logged trajectory stays within a median 2--3\,cm of the replayed A* route, and the largest deviation, 16\,cm, builds up on Start~C's 1.6\,m final straight, where heading drift is not corrected within a move.
 
-\begin{figure}[t]
+\Cref{tab:mc} also shows how the system developed. Every version, including V0, \emph{found} the correct station in all 96 runs (median closest approach 0.036\,m). The differences come entirely from what happens after recognition. V1 fixed a stop bug that turned V0's 96 correct identifications into 0 successes (see below). Removing the step-back in V2 brought the median final distance from 0.110\,m to 0.038\,m, but the slow scan raised the worst case to 229\,s, only 11\,s inside the limit. V3 restored the time margin and kept V2's precision (\cref{fig:mc}).
+
+\begin{figure*}[tbp]
   \centering
-  \figholder{Mission time distribution per version (box/strip plot), 240\,s limit marked}{3.5cm}
-  \caption{Completion time across the Monte Carlo runs. \TODO{caption}}
+  \begin{subfigure}[b]{0.48\textwidth}\includegraphics[width=\linewidth]{figs/mc_versions.pdf}\caption{Controller versions (\cref{tab:mc})}\label{fig:mc-versions}\end{subfigure}\hfill
+  \begin{subfigure}[b]{0.48\textwidth}\includegraphics[width=\linewidth]{figs/mc_ablations.pdf}\caption{Ablations of the final controller (\cref{tab:ablation})}\label{fig:mc-ablations}\end{subfigure}
+  \caption{Mission time of every benchmark run (96 per box; box: quartiles; dots: successes; red crosses: failures; success count above each box; referee-scored Webots simulation time). (a) V0 fails every run despite correct identification, and V3 combines V1's speed with V2's precision. (b) None of the ablations changes the outcome: the time distributions are almost identical and every run stays far below the 240\,s limit.}
   \label{fig:mc}
-\end{figure}
+\end{figure*}
 
 \subsection{Failure cases}
-\TODO{Meaningful failures: baseline collisions after reaching the correct station (motors kept reversing after \texttt{main()} returned); backpack/shoe confusion in the early CNN; runs close to the time limit. Each with cause and fix.}
-\paragraph{Stuck-detector false positives.}
-The initial stuck detector classified the robot as STUCK if the cumulative displacement over the last 10 steps was less than 70\% of the expected displacement. 
+\lead{Collisions after a correct identification (V0).}V0 identified the target correctly in every run but failed all 96: 92 by collision and 4 by timeout. After recognition it called a step-back routine that set both wheels to reverse and returned \emph{without} stopping them. Because \texttt{main()} then returned, the motors kept their last command, and the robot reversed across the arena until it hit an obstacle (median final distance 1.88\,m). Stopping the motors and idling the controller after the mission (V1) fixed every run.
+\lead{Detector confusion.}The first detector, a ResNet18 classifier, confused \texttt{backpack} with \texttt{running\_shoe} in early integration tests. Re-scoring it on the captured frames shows a systematic bias rather than a single mistake. Its most frequent errors send dark posters to \emph{headphones} or \emph{running shoe} (camera$\to$headphones 79 times, headphones$\to$shoe 49, backpack$\to$shoe 40, over 1{,}024 frames), even at square poses (\cref{fig:qual}a). This motivated the encoder study and the view-matched augmentation of \cref{sec:perception}.
+\lead{Near-timeout runs.}V2's slow scan pushed 8 of 96 missions beyond 200\,s. No run failed, but the margin was too small for a live demonstration, which led to the faster scan in V3.
+\lead{Stuck-detector false positives.}The initial stuck detector classified the robot as STUCK if the cumulative displacement over the last 10 steps was less than 70\% of the expected displacement. 
 However, this approach generated 10 false positives during the Start A/B/C normal missions. 
 Analysis of debug logs showed that immediately after turning to a heading of $\pm\pi$, even during normal operation, the step displacement alternated between approximately 2\,mm and 4\,mm, and the cumulative criterion misinterpreted this temporary fluctuation as a stop. 
 Nevertheless, during normal operation, such slow steps occurred at most four times in a row.
@@ -59,4 +70,54 @@ Accordingly, the decision rule was redesigned to check whether any single step a
 After the modification, the number of false-positive STUCK events during normal missions decreased to 0, and STUCK detection was maintained for both head-on and 45$^\circ$ approaches during fault-injection tests with the proximity sensor input disabled.
 
 \subsection{Ablations}
-\TODO{Optional: scan vs.\ single frame; centre crop vs.\ whole frame; safety layers on/off.}
+\Cref{tab:ablation} isolates three design choices on the same 96 missions. \emph{Single frame:} the four-frame scan is replaced by a single frame at the observation yaw. \emph{Perturbed start:} the supervisor shifts the start pose by up to $\pm5$\,cm in $x$ and $y$ and $\pm15^\circ$ in heading (uniform, fixed seed per run). \emph{Safety off:} the same perturbed missions with proximity monitoring and stuck detection disabled.
+
+\begin{table}[tbp]
+  \centering\small
+  \setlength{\tabcolsep}{4pt}
+  \begin{tabular}{@{}lcccc@{}}
+    \toprule
+    Variant & Success & Failures & Time (s) & Dist.\ (m) \\
+            &         &          & med/max  & med \\
+    \midrule
+    Final (V3)        & 96/96 & 0 & 73/162 & 0.037 \\
+    Single frame      & 96/96 & 0 & 69/154 & 0.038 \\
+    Perturbed start   & 96/96 & 0 & 73/161 & 0.038 \\
+    Pert., safety off & 96/96 & 0 & 73/161 & 0.038 \\
+    \bottomrule
+  \end{tabular}
+  \caption{Ablations on the same 96 missions, each changing one factor of the final controller (perturbed starts: up to $\pm$5\,cm and $\pm15^\circ$, same random seed per mission in both perturbed rows; referee-scored; failures: collisions, timeouts and wrong stops). Benchmark performance is unchanged by all three changes, so the scan and the safety layers provide robustness for conditions this benchmark does not produce rather than being the source of the measured success.}
+  \label{tab:ablation}
+\end{table}
+
+\lead{Scan.}A single frame is as accurate as the four-frame scan on all 96 missions and saves 3.5\,s per mission (paired median). The planner delivers the robot almost square to each station, within the single-frame tolerance of \cref{sec:perception}. We keep the scan because it costs little and covers larger arrival errors, where single-frame accuracy drops (\cref{fig:multiview}).
+\lead{Start perturbation.}Shifting the start pose changes the mission time by a paired median of $-0.4$\,s (maximum $+1.0$\,s). The first $90^\circ$ turn snaps the heading back to the grid, and GPS cells absorb the position offset.
+\lead{Safety off.}With proximity monitoring and stuck detection disabled, all 96 perturbed missions are identical to the safety-on runs, to 0.01\,s of simulation time. The event logs confirm this directly: across 192 nominal missions over all eight layouts, the controller logged 0 proximity events and 0 stuck detections (\cref{tab:obstacle}). The planned paths alone kept every nominal run collision-free. The safety layers therefore provide robustness against disturbances not represented in the nominal benchmark (unmapped obstacles, wheel slip, a mis-set start). \Cref{sec:safety} evaluates them directly with fault injection.
+
+\subsection{Unmapped obstacle and safety events}
+\label{sec:obstacle}
+To test the safety layers where they matter, the referee places a $6{\times}6{\times}8$\,cm box that is \emph{not} in the occupancy grid on a cell of the robot's first planned route, before the robot moves. It replays the controller's planner, draws the cell with the run's seed, and uses the same box in the ON and OFF runs. Safety events are counted from the controller's own log lines. We also re-ran the nominal benchmark over all eight layouts, so every target appears at every station.
+
+\begin{table}[tbp]
+  \centering\small
+  \setlength{\tabcolsep}{2.5pt}
+  \begin{tabular}{@{}lcccccc@{}}
+    \toprule
+    Condition & Success & Coll. & Wrong & TO & Events & Stuck \\
+    \midrule
+% BEGIN obstacle rows (generated by tom/bench/obstacle_table.py)
+    Nominal & 192/192 & 0 & 0 & 0 & 0 (0) & 0 \\
+    Box, safety off & 0/95 & 95 & 0 & 0 & -- & -- \\
+    Box, safety on & 55/93 & 18 & 20 & 0 & 11,504 (93) & 0 \\
+% END obstacle rows
+    \bottomrule
+  \end{tabular}
+  \caption{Nominal benchmark over all eight layouts (3 starts $\times$ 8 targets $\times$ 8 layouts) and the unmapped-obstacle test (one box on the first planned route, same box per seed with safety ON and OFF), scored by the referee; Events: logged proximity stops (runs with at least one in brackets); Stuck: logged stuck detections; TO: timeouts. Three safety-on runs and one safety-off run, all from Start~A, where the robot kept pressing against the box, exceeded the cluster's wall-clock limit and are not included. Without safety every obstacle run collides, with safety most succeed, and in nominal runs the safety layers never fire.}
+  \label{tab:obstacle}
+\end{table}
+
+\lead{Nominal, all layouts.} All 192 missions succeed (median 73\,s, worst 162\,s), with no safety event. With deterministic physics, mission time depends only on the start and the goal station, so layouts 4--7 reproduce the time distribution of layouts 0--3 exactly; vision never changes the path.
+
+\lead{Safety off.} The planner drives straight into the box: every run collides, after a median of 9.7\,s.
+
+\lead{Safety on.} The proximity layer stops the robot in front of the box in every run, and 55 of 93 completed missions (59\%) still succeed. The logs show how. After each FRONT event the robot reverses and replans, but the static map yields the same route, so it stops again. This repeats until the 100-retry limit (median 100 events per run), after which the robot abandons that station and continues the tour. The two remaining failure modes match the limitations in \cref{sec:discussion}. In 20 runs the robot, having given up, classifies the view from wherever it stands; because the closed-set decision always returns a label and the 0.20 threshold is not applied in the loop, it accepts a wrong station. The other 18 runs, all from Start~A, end in contact after about 200 repeated reverse-and-replan cycles. Stuck detection never fired: every event was caught by the proximity layer first.

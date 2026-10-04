@@ -7,11 +7,11 @@
     \toprule
     Member & Responsibilities \\
     \midrule
-    \TODO{Name}             & Perception (encoder study, DINOv3 fine-tuning, detector integration); Monte Carlo benchmark and referee; \TODO{report sections} \\
-    Isaac Mangano           & Route planning, robot motion, main controller loop and integration; station scan; \TODO{} \\
+    Syuan-Hao Li            & Perception research: encoder study over 14 encoders, view-matched augmentation, DINOv3 fine-tuning, pose, crop and multi-view analysis, and integration of the detector into the controller; development of the referee and the systematic benchmark; evaluation of each merged controller version; the ablations and the unmapped-obstacle test; final integration and editing of this report (\cref{sec:perception,sec:evaluation}, \cref{app:encoders,app:git}). \\
+    Isaac Mangano           & Code framework: project and controller skeleton, module structure, coordinate helpers and the first end-to-end MVP; route planning, implementing Dijkstra and then A* on the occupancy grid, the greedy station order and the rotation-matrix motion execution; the station scan and its speed-up; the planner benchmark over 110 start/station pairs and the route figure (\cref{sec:planning}, \cref{app:planners}). \\
     Hyunkyung Lee           & Safety monitoring and recovery; proximity-threshold calibration; progress-based stuck detection; diagnostic and fault-injection testing; evaluation logging and integration validation. \\
     \bottomrule
   \end{tabular}
 \end{center}
 
-\TODO{How the work was integrated: shared repository, pull requests and review, Monte Carlo runs on each merged version.}
+\lead{Integration.} All work went through a shared GitHub repository. Changes entered the main line mostly through feature branches and pull requests (nine pull requests; \cref{fig:git}), and each merge was discussed in the team before it was taken up by the others. The modules meet at the small interfaces of \cref{tab:modules}, so perception, planning and safety could be developed in parallel. Every merged controller version was re-evaluated end to end with the same referee and benchmark (\cref{tab:mc}), which is how the integration defect of V0 and the slow scan of V2 were found. The team met weekly and discussed problems continuously in a Microsoft Teams chat.

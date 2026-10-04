@@ -167,6 +167,9 @@ def main():
             retries += 1
             starting_position = gps.coordinate()
             direction_labels = path.path_a_star(starting_position, goal)
+            if not direction_labels:
+                print("No path from", starting_position, "to", goal, "- skipping station")
+                break
             for direction_label in direction_labels:
                 cell, label = direction_label
                 if cell != gps.coordinate():
