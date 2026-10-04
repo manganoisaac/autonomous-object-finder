@@ -15,10 +15,10 @@ Perception has one job: decide which of the eight targets the poster at a statio
 To compare methods without touching the mission controller, a separate supervisor teleports the robot to each station, re-assigns the station textures and saves the camera image. Eight cyclic layouts place every target at every station. Two random-pose sets serve as test data: \emph{normal} (up to $\pm$6\,cm and $\pm15^\circ$; 512 target and 120 distractor frames) and \emph{hard} (up to $\pm$12\,cm and $\pm30^\circ$, where the poster sometimes leaves the frame). Two yaw/offset sweeps (17k target frames, full and lite rendering) measure pose tolerance. This supervisor builds the offline test set only. The submitted model is trained on the eight reference images alone and never sees a simulator frame.
 
 \subsection{Encoder comparison}
-We compared zero-shot text matching, class prototypes from frozen features, and fine-tuning, over 14 encoders. \Cref{tab:encoders} shows representative rows and \cref{fig:encoders} the error structure; the full comparison of all methods is in \cref{app:encoders} (\cref{fig:headline}). Two findings drove the design:
+We compared zero-shot text matching, class prototypes from frozen features, and fine-tuning, over 14 encoders. \Cref{tab:encoders} shows representative rows, \cref{fig:encoders} the per-class errors and \cref{fig:tsne} the feature geometry; the full comparison of all methods is in \cref{app:encoders} (\cref{fig:headline}). Two findings drove the design:
 \begin{itemize}[nosep,leftmargin=*]
   \item \textbf{The first detector's weakness was its data, not its model.} The original ResNet18~\cite{he2016resnet} was trained on full, bright references with generic augmentation, and it labelled many dark views \emph{running shoe} or \emph{headphones}, the two dark references. The same ResNet18 with view-matched augmentation (\cref{fig:samples}, middle) rises from 75.6\% to 98.8\% on the normal set.
-  \item \textbf{CLIP image embeddings do not separate these classes.} With the references as prototypes, CLIP~\cite{radford2021clip} ViT-B/32 reaches 60.0\%; the true-vs-nearest-wrong cosine margin is only 0.02--0.03, against 0.43--0.54 for DINOv3. CLIP-family models work only in zero-shot \emph{text} mode (MobileCLIP~\cite{vasu2024mobileclip}: 95.7\%).
+  \item \textbf{CLIP image embeddings do not separate these classes.} With the references as prototypes, CLIP~\cite{radford2021clip} ViT-B/32 reaches 60.0\%; the true-vs-nearest-wrong cosine margin is only 0.02--0.03, against 0.43--0.54 for DINOv3 (\cref{fig:tsne}). CLIP-family models work only in zero-shot \emph{text} mode (MobileCLIP~\cite{vasu2024mobileclip}: 95.7\%).
 \end{itemize}
 
 \begin{table}[tbp]
@@ -42,10 +42,16 @@ We compared zero-shot text matching, class prototypes from frozen features, and 
 
 \begin{figure*}[tbp]
   \centering
-  \begin{subfigure}[b]{0.52\textwidth}\includegraphics[width=\linewidth]{figs/p_confusion.pdf}\caption{Confusion matrices on the hard set}\end{subfigure}\hfill
-  \begin{subfigure}[b]{0.46\textwidth}\includegraphics[width=\linewidth]{figs/p_tsne.pdf}\caption{t-SNE of encoder features}\end{subfigure}
-  \caption{Error structure and feature geometry, computed on the hard set: (a) row-normalised confusion matrices (true vs.\ predicted, \%; overall accuracy in each title); (b) t-SNE of simulator captures (blue), augmented references (orange) and original references (green). The first detector sends most dark views to \emph{shoe} and \emph{headphones}, while fine-tuned DINOv3 is nearly diagonal; in DINOv3's feature space captures and references of a class form one cluster, whereas CLIP's captures collapse into one mixed blob.}
+  \includegraphics[width=\textwidth]{figs/p_confusion.pdf}
+  \caption{Row-normalised confusion matrices (true vs.\ predicted, \%) on the 512 hard-set target frames for the first detector, the training-free DINOv3-S prototype and the submitted fine-tuned DINOv3-S, with overall accuracy in each title. The first detector sends most dark views to \emph{shoe} and \emph{headphones}, while the fine-tuned model is nearly diagonal; its remaining errors are views where the poster has largely left the frame.}
   \label{fig:encoders}
+\end{figure*}
+
+\begin{figure*}[tbp]
+  \centering
+  \includegraphics[width=\textwidth]{figs/p_tsne.pdf}
+  \caption{t-SNE of frozen CLIP ViT-B/32, ResNet18 and DINOv3-S (CLS) features for the normal-set captures (blue), the view-augmented references (orange) and the eight original references (green). In DINOv3's feature space the captures and references of each class form one cluster, whereas CLIP's captures collapse into a single mixed blob, which is why CLIP image prototypes fail on this task.}
+  \label{fig:tsne}
 \end{figure*}
 
 \begin{figure*}[tbp]
