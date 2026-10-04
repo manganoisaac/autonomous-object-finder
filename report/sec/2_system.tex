@@ -1,15 +1,36 @@
 \section{System Overview}
 \label{sec:system}
 
-\begin{figure*}[t]
+\begin{figure*}[tbp]
   \centering
   \includegraphics[width=\textwidth]{figs/system_overview.drawio.pdf}
-  \caption{System overview.}
+  \caption{Control flow of the submitted controller, drawn from the main loop: navigation (green), safety checks on every simulation step that stop the move and trigger replanning (red, dashed), and perception at the station (orange). Vision enters only at the final decision; everything before it uses the supplied map, GPS and IMU.}
   \label{fig:overview}
 \end{figure*}
 
-\TODO{Mission flow (\cref{fig:overview}): read target label; pick nearest unvisited station; plan and drive to its observation cell; turn to observation yaw; classify; stop if match, otherwise continue.}
+\lead{Mission flow.}The controller reads the target label from \texttt{config/assessment\_mission.json} and repeats one cycle until it finds the target (\cref{fig:overview}). It selects the nearest unvisited station, plans a shortest grid path to that station's observation cell (\cref{sec:planning}), and drives the path cell by cell while the safety monitor checks every simulation step (\cref{sec:safety}). A safety event stops the move, and the controller replans from the robot's current cell. At the observation cell the robot turns to the station's observation yaw, takes four frames and classifies them (\cref{sec:perception}). If the most confident label is the target, the robot stops and holds position; otherwise it moves on to the next station.
 
-\TODO{Sensors and what each is used for (camera: target identity only; GPS/IMU + map: localisation and navigation; ps0--ps7: safety). State explicitly what is \emph{not} used (world files, texture URLs, ground truth).}
+\lead{Sensors and what they are used for.}The camera decides target identity and nothing else. GPS and the IMU, combined with the supplied occupancy grid and station coordinates, give the robot's cell and heading for planning and driving. The proximity sensors ps0--ps7 feed only the safety monitor. The controller never reads world files, texture names or simulator ground truth, and it does not use a supervisor. The supervisor-based referee and capture tools in our evaluation are separate programs that only score runs or build offline test data.
 
-\TODO{Code structure: \texttt{detector/}, \texttt{path/}, \texttt{robot/}, \texttt{safety/}, \texttt{stations/}; how the modules are integrated in the main loop.}
+\lead{Modules and interfaces.}Each concern lives in one package, and the main loop composes them through small interfaces (\cref{tab:modules}). Motion functions return a set of safety events, empty on success, so planning and safety stay decoupled: the motion layer stops and recovers, and the main loop decides to replan.
+
+\begin{table}[tbp]
+  \centering\small
+  \setlength{\tabcolsep}{3pt}
+  \begin{tabular}{@{}l>{\raggedright\arraybackslash}p{0.74\linewidth}@{}}
+    \toprule
+    Module & Interface (input $\rightarrow$ output) \\
+    \midrule
+    \texttt{gps}      & sensors $\rightarrow$ grid cell; heading (multiple of $90^\circ$) and yaw \\
+    \texttt{stations} & robot cell $\rightarrow$ nearest unvisited (observation cell, yaw) \\
+    \texttt{path}     & start, goal cell $\rightarrow$ [(cell, global move)] via A* \\
+    \texttt{robot}    & global move $\rightarrow$ turn + one-cell move; returns safety events \\
+    \texttt{safety}   & ps0--ps7 $\rightarrow$ danger directions; progress $\rightarrow$ STUCK \\
+    \texttt{detector} & camera frames $\rightarrow$ (label, confidence), best of four \\
+    \bottomrule
+  \end{tabular}
+  \caption{Controller packages and the interface each one exposes to the main loop. Motion returns safety events instead of acting on them, which keeps planning, safety and perception independent and testable.}
+  \label{tab:modules}
+\end{table}
+
+\lead{Control loop and timing budget.}The controller runs at Webots' basic time step of 32\,ms in synchronous mode, so simulation time advances only when the controller calls \texttt{step}. Model loading and the 32\,ms inference therefore cost wall-clock time but no mission time. Mission time goes almost entirely to motion. A 0.1\,m cell takes about 25 steps (0.8\,s) at full wheel speed, an in-place $90^\circ$ turn about 0.7\,s, and the station scan about 3.5\,s per mission in total (\cref{tab:ablation}). Across the 96-mission benchmark the final controller needs 73\,s at the median and 162\,s in the worst case, which uses 68\% of the 240\,s limit (\cref{sec:evaluation}).

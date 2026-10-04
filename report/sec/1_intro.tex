@@ -2,17 +2,16 @@
 \label{sec:intro}
 
 % Rubric: problem understanding, project idea and design rationale (8)
-The task is simulated in Webots~\cite{michel2004webots} with an e-puck robot~\cite{mondada2009epuck}. \TODO{The problem: an e-puck in a known arena with eight observation stations; one station displays the mission target. Success = stopping within 0.20\,m of the correct observation position, no collision, within 4:00 simulation time.}
+The task is simulated in Webots~\cite{michel2004webots} with an e-puck robot~\cite{mondada2009epuck}. The arena is a $4{\times}4$\,m room with five barriers and eight observation stations, each displaying one of eight target objects. A mission names one target; the robot must drive from one of three designated starts to the station that displays it and stop within 0.20\,m of that station's observation position, without any collision, within 4:00 of simulation time. The same controller must run unchanged for every start, target and target-to-station assignment.
 
-\TODO{What makes it hard: target identity is only available visually (no world-file or texture access); low camera sees only the lower half of each poster; several stations are in shadow; robot arrives with heading error; narrow corridors.}
+\lead{What makes it hard.} The map, station coordinates and robot pose are given, but \emph{which} station holds the target is not: it must be read from the camera, without access to world files or texture names. The camera sits low, so at the observation pose it sees only the bottom half of each poster, and four of the eight stations are about three times darker than the others (\cref{sec:perception}). The robot can arrive with a heading error, the barriers carry 20 distractor images, and the corridors leave only centimetres of clearance.
 
-\TODO{Project idea in one paragraph: map-based navigation to candidate stations + visual verification at each station + two-layer safety monitor.}
+\lead{Project idea.} We separate \emph{where to go} from \emph{what is there}. Because the map is known, navigation is exact: an A* planner drives the robot cell by cell to each station's observation pose in greedy nearest-first order. Vision is used only at a station, to decide whether its poster is the target. A safety monitor watches every simulation step and triggers replanning when something unexpected happens (\cref{fig:overview}). Each part was chosen and validated with its own experiments, and the whole system with a referee-scored Monte Carlo benchmark.
 
-\paragraph{Contributions.}
-\begin{itemize}[nosep]
-  \item \TODO{Perception: DINOv3 ViT-S/16 fine-tuned on eight reference images with view-matched augmentation; 32\,ms/frame on CPU.}
-  \item \TODO{Planning: grid-based shortest-path planning and nearest-station visiting order.}
+\lead{Contributions.}\begin{itemize}[nosep]
+  \item \textbf{Perception:} A study of 14 encoders shows that the first detector's failures came from its training data, not its model. A DINOv3 ViT-S/16 fine-tuned on the eight references with view-matched augmentation reaches 100\% on unseen station frames, at 32\,ms per frame on a CPU, and its confidence separates its own errors (all $\le$0.157) from correct predictions. (\cref{sec:perception})
+  \item \textbf{Route planning:} Optimal A* search on the 4-connected occupancy grid with greedy nearest-station ordering and rotation-matrix motion execution, compared offline against Dijkstra, greedy best-first and a turn-penalised variant. (\cref{sec:planning}, \cref{app:planners})
   \item \textbf{Safety:} A two-layer safety monitor combining per-step directional proximity monitoring with progress-based stuck detection for contacts missed by the proximity sensors, with replanning after each safety event. 
   The front thresholds were empirically calibrated, improving stopping clearance in a 45$^\circ$ approach from 3.6\,cm to 5.2\,cm, and the stuck detector was validated through fault-injection tests. (\cref{sec:safety})
-  \item \TODO{Evaluation: three student missions plus a 96-run Monte Carlo benchmark with an independent referee.}
+  \item \textbf{Evaluation:} An independent supervisor referee scores runs against the assignment criteria. We use it on the three student missions, a 96-mission benchmark across four controller versions, and ablations of the scan, the start pose and the safety layers. (\cref{sec:evaluation})
 \end{itemize}

@@ -2,18 +2,32 @@
 \label{sec:discussion}
 
 % Rubric: project complexity and robustness (6)
-\TODO{Limitations: time margin (slowest run 229\,s of 240\,s); scan speed; 4-connected paths with many turns; greedy station order; benchmark uses a fixed set of starts and deterministic physics.}
-\paragraph{Safety.}
-First, replanning after a safety event uses the same occupancy map.
+\subsection{Limitations}
+\lead{Evaluation scope.} All runs use the supplied training worlds, software rendering without shadows, and a deterministic simulator. The benchmark varies start, target and station assignment, plus a $\pm$5\,cm/$\pm15^\circ$ start perturbation, but not lighting, rendering quality or wheel slip. Every nominal and perturbed run succeeds, so only the unmapped-obstacle test (\cref{sec:obstacle}) shows where the system breaks.
+
+\lead{Unmapped obstacles.} The obstacle test quantifies the first safety limitation below: replanning on the static map sends the robot back to the same blocked cell until the retry limit, and accepting a closed-set label at a wrong pose then causes wrong stops (\cref{tab:obstacle}).
+
+\lead{Perception.} The detector is trained on eight images and tested on frames from the same world. Accuracy falls once the poster leaves the frame (single frame: 65.6\% at $+30^\circ$; \cref{fig:multiview}), and a darker GPU renderer on the assessment machine could shift confidences, because darkness was the main nuisance factor in our tests. The 0.20 confidence threshold is validated offline but not used in the loop.
+
+\lead{Planning and time.} Paths are 4-connected, so a route turns 2.9 times on average, and greedy ordering reaches some stations last regardless of where the target is (S1 is 7th or 8th from every start). The worst benchmark mission uses 162 of 240\,s, so the remaining margin depends on the target's position in the fixed visiting order.
+
+\lead{Safety.}First, replanning after a safety event uses the same occupancy map.
 Therefore, if an event is caused by an obstacle that is not present in the map, the planner may repeatedly generate the same route until the retry limit is reached. 
 Temporary blocking of repeatedly problematic cells was not implemented because no safety events occurred during normal missions, the assessment environments match the occupancy grid, and additional detours could reduce the available time margin.
 Second, LEFT, RIGHT, and BACK dangers prompt the robot to stop and replan, but no direction-specific recovery manoeuvre is performed. 
 Third, the side and back proximity thresholds have been checked for false-positive occurrences but were not calibrated against stopping clearance. 
 The front threshold has been calibrated in a more direct way; however, it was calibrated only against the tested wall-approach geometries in simulation, limiting its applicability to other shapes or approach angles.
 
-\TODO{Improvements: faster or confidence-gated scan; turn-cost or 8-connected planning; path smoothing with a pure-pursuit/PID follower; learned local controller (SAC/TD3) compared against PID; randomised start poses and perturbations in the benchmark.}
-\paragraph{Safety.}
-Future improvements could include temporarily marking cells associated with repeated safety events as occupied before replanning, adding direction-specific recovery behaviours for side and back dangers, and calibrating the side and back thresholds using controlled shallow-angle and reverse-approach tests. 
+\subsection{Future work}
+\lead{Fewer turns.} A turn-penalised A* finds equally short paths with 47\% fewer turns (\cref{app:planners}). Since a $90^\circ$ turn costs about as much time as driving one cell, this is the cheapest way to shorten missions. A pure-pursuit or PID follower on a smoothed path would go further.
+
+\lead{Confidence-gated scan.} A single frame is as accurate as the four-frame scan on the benchmark and 3.5\,s faster (\cref{tab:ablation}). Scanning only when the first frame's confidence is below the 0.20 threshold would keep the insurance against large arrival errors at almost no cost.
+
+\lead{Handling unmapped obstacles.} Two small changes target both obstacle failure modes. Marking the cell in front of the robot as occupied after a FRONT event would make the planner route around the box instead of retrying the same path. Applying the validated 0.20 confidence threshold at the station would turn a low-confidence view from a wrong pose into ``not the target''. All 69 wrong predictions on the hard set fall below it (\cref{sec:perception}).
+
+\lead{Learned local control.} The global problem is solved optimally by planning on a known map, so reinforcement learning would not improve route choice. Where it could help is local motion: a continuous-action policy (SAC or TD3) that outputs wheel speeds, or a residual correction on top of the current move/turn primitives, trained in simulation and compared against the hand-written controller on the same benchmark. We did not adopt it because the current controller already succeeds on every benchmark mission, and a learned policy would be harder to verify against the time and collision constraints.
+
+\lead{Safety.}Future improvements could include temporarily marking cells associated with repeated safety events as occupied before replanning, adding direction-specific recovery behaviours for side and back dangers, and calibrating the side and back thresholds using controlled shallow-angle and reverse-approach tests.
 
 \section{Conclusion}
-\TODO{2--3 sentences.}
+Separating navigation on the known map from visual verification at each station gives a controller that is simple to reason about and reliable in our tests: all three student missions and all 96 benchmark missions succeed with no collision, a median stopping error of 3.7\,cm and a worst case of 162\,s. The largest gains came from understanding the data, namely the low, dark camera view, and from testing the integrated system end to end, which exposed the motor bug that turned 96 correct identifications into 0 successes.
