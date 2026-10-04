@@ -35,3 +35,14 @@ We compare four planners offline on the 110 ordered start/station pairs from the
   \caption{Accuracy on the normal and hard capture sets and simulated mission success (random station order, stop at the first positive, success if that station is correct) for every method, measured on frames from stations the method never saw; fine-tune bars show the mean and s.d.\ of 3 seeds. Training-free DINOv3 prototypes already beat the first detector by 23 points on the hard set, and fine-tuning DINOv3 on the eight references gives the best accuracy (88.7\%) and mission success (83.9\%) without any simulator data.}
   \label{fig:headline}
 \end{figure*}
+
+\section{Development history}
+\label{app:git}
+
+\begin{figure*}[tbp]
+  \centering
+  \includegraphics[width=\textwidth]{figs/git_graph.pdf}
+  \caption{Commit graph of the shared repository up to the final controller (42 commits, plotted in topological order with a weekly date axis): the main line, the feature branches and the pull-request merges (diamonds, numbered), with each commit coloured by its author. Work from all three members entered the main line through branches and pull requests, continuously across the three weeks. Some of Isaac's commits appear on a side lane because they arrived through a sync from his upstream repository.}
+  \label{fig:git}
+\end{figure*}
+

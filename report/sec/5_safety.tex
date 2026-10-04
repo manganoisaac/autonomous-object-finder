@@ -10,7 +10,7 @@ When danger is detected, the current movement is stopped immediately, and a safe
 
 There are two reasons why a monitoring-based approach is preferable to a reactive obstacle avoidance method. 
 First, in a static assessment environment, since the global planner already provides a valid grid path, continuous reactive steering could disrupt the planned path and the discrete one-cell movement structure. 
-Second, the monitoring layer does not change the navigation behaviour unless there is an anomaly and, since the checks are solely computational and Webots waits for the controller at every step, it does not add to the mission time.
+Second, the monitoring layer does not change the navigation behaviour unless there is an anomaly and, since Webots waits for the controller at every step, the checks do not advance Webots simulation time, which is the mission-time metric (they add only wall-clock time).
 
 The safety system consists of two complementary layers. 
 The first layer uses proximity sensors to detect a dangerous approach to obstacles before a collision occurs. 
@@ -90,10 +90,10 @@ Therefore, the 8-step window was set to provide a margin long enough to account 
     \item \textbf{Normal missions:} In all runs (Start A/B/C), the maximum proximity reading across all eight sensors was 80.4 or lower. 
     The Layer 1 safety mechanism was never triggered, and there were no false positives at Layer 2. 
     Therefore, the safety layer did not add any time overhead to the normal mission.
-    \item \textbf{Fault injection (\texttt{stuck\_test}):} The robot was driven into a wall while the proximity sensor values input to Layer 1 were intentionally blocked. 
+    \item \textbf{Fault injection (\texttt{stuck\_test}):} The robot was driven into a wall while the Layer 1 proximity-sensor inputs were intentionally disabled. 
     Layer 2 detected a STUCK condition in both head-on and 45$^\circ$ approaches. 
     Since the actual sensor values at the time of stoppage (373, 993) significantly exceeded the threshold of 120, it was confirmed that the detection occurred in an actual contact situation.
-    \item \textbf{Benchmark:} The final version had zero collisions in 96 Monte Carlo runs. 
+    \item \textbf{Benchmark:} The final version had zero collisions in the 96-mission comparison benchmark. 
     However, the previous version (e97b0e5), which lacked safety monitoring during movement, also had zero collisions in the same benchmark. 
     Therefore, it is reasonable to evaluate the safety layer not as the cause of passing the benchmark, but as a defence-in-depth mechanism designed to prepare for situations that cannot be predicted during the planning phase. Logged event counts confirm this: 0 proximity events and 0 stuck detections in 192 nominal missions, while with an unmapped box on the route the layer stops the robot in every run and raises success from 0\% to 59\% (\cref{sec:obstacle}).
 \end{itemize}

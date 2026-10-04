@@ -3,7 +3,7 @@
 
 % Rubric: experimental evaluation, results and discussion (8)
 \subsection{Protocol}
-We evaluate the full system in two ways. \emph{(i) Student missions:} the three provided worlds \texttt{training\_start\_\{A,B,C\}} as supplied, with the supplied mission target (\texttt{soda\_can}, displayed at station S1). \emph{(ii) Monte Carlo benchmark:} 3 starts $\times$ 8 targets $\times$ 4 station layouts $=$ 96 missions per controller version. A layout is a cyclic re-assignment of the eight target images to the eight stations, applied by a supervisor before the robot moves, so each target is searched for at several stations and from every start. All runs use headless Webots R2025a on a CPU cluster. An independent referee supervisor, which never communicates with the controller, scores each run against the assignment criteria: success requires stopping within 0.20\,m of the correct observation position, with no contact other than the wheels on the floor, within 240\,s of simulation time. The referee also records completion time, final distance and the station the robot stopped at. The controller uses no ground truth.
+We evaluate the full system in two ways. \emph{(i) Student missions:} the three provided worlds \texttt{training\_start\_\{A,B,C\}} as supplied, with the supplied mission target (\texttt{soda\_can}, displayed at station S1). \emph{(ii) Systematic benchmark:} we use a 96-mission comparison benchmark (3 starts $\times$ 8 targets $\times$ 4 station layouts) for controller-version comparisons and ablations. For the final controller we expand it to eight layouts (192 missions, \cref{sec:obstacle}), so that every target appears at every station. A layout is a cyclic re-assignment of the eight target images to the eight stations, applied by a supervisor before the robot moves, so each target is searched for at several stations and from every start. All runs use headless Webots R2025a on a CPU cluster. An independent referee supervisor, which never communicates with the controller, scores each run against the assignment criteria: success requires stopping within 0.20\,m of the correct observation position, with no contact other than the wheels on the floor, within 240\,s of simulation time. The referee also records completion time, final distance and the station the robot stopped at. The controller uses no ground truth.
 
 \begin{table}[tbp]
   \centering\small
@@ -41,7 +41,7 @@ We evaluate the full system in two ways. \emph{(i) Student missions:} the three 
     V3 (final)& \textbf{96/96} & \textbf{0/0} & \textbf{73/141/162} & \textbf{0.037/0.076} \\
     \bottomrule
   \end{tabular}
-  \caption{Monte Carlo benchmark of four controller versions on the same 96 missions (3 starts $\times$ 8 targets $\times$ 4 station layouts, scored by the referee). V0: first integration; V1: motors stopped after the mission; V2: no step-back, 4-frame scan, safety layers; V3: A* and a $5\times$ faster scan (submitted; also 192/192 over all 8 layouts, \cref{tab:obstacle}). Coll./TO: collisions/timeouts. Every version found the correct station; the gains came from stopping correctly (V1), stopping precisely (V2) and restoring the time margin (V3).}
+  \caption{Comparison benchmark of four controller versions on the same 96 missions (3 starts $\times$ 8 targets $\times$ 4 station layouts, scored by the referee). V0: first integration; V1: motors stopped after the mission; V2: no step-back, four-frame scan, safety layers; V3: A* and a $5\times$ faster scan (submitted; also 192/192 over all 8 layouts, \cref{tab:obstacle}). Coll./TO: collisions/timeouts. Every version found the correct station; the gains came from stopping correctly (V1), stopping precisely (V2) and restoring the time margin (V3).}
   \label{tab:mc}
 \end{table}
 
@@ -70,7 +70,7 @@ Accordingly, the decision rule was redesigned to check whether any single step a
 After the modification, the number of false-positive STUCK events during normal missions decreased to 0, and STUCK detection was maintained for both head-on and 45$^\circ$ approaches during fault-injection tests with the proximity sensor input disabled.
 
 \subsection{Ablations}
-\Cref{tab:ablation} isolates three design choices on the same 96 missions. \emph{Single frame:} the 4-frame scan is replaced by a single frame at the observation yaw. \emph{Perturbed start:} the supervisor shifts the start pose by up to $\pm5$\,cm in $x$ and $y$ and $\pm15^\circ$ in heading (uniform, fixed seed per run). \emph{Safety off:} the same perturbed missions with proximity monitoring and stuck detection disabled.
+\Cref{tab:ablation} isolates three design choices on the same 96 missions. \emph{Single frame:} the four-frame scan is replaced by a single frame at the observation yaw. \emph{Perturbed start:} the supervisor shifts the start pose by up to $\pm5$\,cm in $x$ and $y$ and $\pm15^\circ$ in heading (uniform, fixed seed per run). \emph{Safety off:} the same perturbed missions with proximity monitoring and stuck detection disabled.
 
 \begin{table}[tbp]
   \centering\small
@@ -86,13 +86,13 @@ After the modification, the number of false-positive STUCK events during normal 
     Pert., safety off & 96/96 & 0 & 73/161 & 0.038 \\
     \bottomrule
   \end{tabular}
-  \caption{Ablations on the same 96 missions, each changing one factor of the final controller (perturbed starts: up to $\pm$5\,cm and $\pm15^\circ$, same random seed per mission in both perturbed rows; referee-scored; failures: collisions, timeouts and wrong stops). The system is insensitive to all three changes on this benchmark, so the scan and the safety layers act as insurance for conditions the benchmark does not produce rather than as sources of the measured success.}
+  \caption{Ablations on the same 96 missions, each changing one factor of the final controller (perturbed starts: up to $\pm$5\,cm and $\pm15^\circ$, same random seed per mission in both perturbed rows; referee-scored; failures: collisions, timeouts and wrong stops). Benchmark performance is unchanged by all three changes, so the scan and the safety layers provide robustness for conditions this benchmark does not produce rather than being the source of the measured success.}
   \label{tab:ablation}
 \end{table}
 
-\lead{Scan.}A single frame is as accurate as the 4-frame scan on all 96 missions and saves 3.5\,s per mission (paired median). The planner delivers the robot almost square to each station, within the single-frame tolerance of \cref{sec:perception}. We keep the scan because it costs little and covers larger arrival errors, where single-frame accuracy drops (\cref{fig:multiview}).
+\lead{Scan.}A single frame is as accurate as the four-frame scan on all 96 missions and saves 3.5\,s per mission (paired median). The planner delivers the robot almost square to each station, within the single-frame tolerance of \cref{sec:perception}. We keep the scan because it costs little and covers larger arrival errors, where single-frame accuracy drops (\cref{fig:multiview}).
 \lead{Start perturbation.}Shifting the start pose changes the mission time by a paired median of $-0.4$\,s (maximum $+1.0$\,s). The first $90^\circ$ turn snaps the heading back to the grid, and GPS cells absorb the position offset.
-\lead{Safety off.}With proximity monitoring and stuck detection disabled, all 96 perturbed missions are identical to the safety-on runs, to 0.01\,s of simulation time. The event logs confirm this directly: across 192 nominal missions over all eight layouts, the controller logged 0 proximity events and 0 stuck detections (\cref{tab:obstacle}). The planned paths alone kept every nominal run collision-free. The safety layers are therefore headroom for disturbances outside this benchmark (unmapped obstacles, wheel slip, a mis-set start). \Cref{sec:safety} evaluates them directly with fault injection.
+\lead{Safety off.}With proximity monitoring and stuck detection disabled, all 96 perturbed missions are identical to the safety-on runs, to 0.01\,s of simulation time. The event logs confirm this directly: across 192 nominal missions over all eight layouts, the controller logged 0 proximity events and 0 stuck detections (\cref{tab:obstacle}). The planned paths alone kept every nominal run collision-free. The safety layers therefore provide robustness against disturbances not represented in the nominal benchmark (unmapped obstacles, wheel slip, a mis-set start). \Cref{sec:safety} evaluates them directly with fault injection.
 
 \subsection{Unmapped obstacle and safety events}
 \label{sec:obstacle}
